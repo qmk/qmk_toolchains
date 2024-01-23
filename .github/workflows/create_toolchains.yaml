@@ -1,0 +1,263 @@
+---
+name: Create Toolchains
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  crosstool:
+    name: "Build crosstool-ng"
+    runs-on: ${{ fromJSON(matrix.host_labels) }}
+    strategy:
+      matrix:
+        runner: [linuxX64, macosX64, macosARM64]
+        include:
+          - runner: linuxX64
+            host_labels: '["ubuntu-22.04"]'
+          - runner: macosX64
+            host_labels: '["macos-12"]'
+          - runner: macosARM64
+            host_labels: '["macos-14"]' #'["self-hosted", "macOS", "ARM64"]'
+
+    steps:
+      - name: "Clone crosstool-ng repo"
+        uses: actions/checkout@v4
+        with:
+          repository: crosstool-ng/crosstool-ng
+          ref: master
+
+      - name: "Host info"
+        run: |
+          uname -a
+
+      - name: "Prerequisites (Linux)"
+        if: ${{ runner.os == 'Linux' }}
+        run: |
+          sudo apt-get install -y gperf help2man libtool-bin meson ninja-build
+
+      - name: "Prerequisites (macOS)"
+        if: ${{ runner.os == 'macOS' }}
+        run: |
+          brew install autoconf automake bash binutils coreutils gawk gnu-sed help2man libtool make meson ncurses pkg-config python3 texinfo
+
+      - name: "Build crosstool-ng"
+        run: |
+          if [ "$RUNNER_OS" == "macOS" ]; then
+            export PATH="$PATH:/usr/local/opt/binutils/bin:/usr/local/opt/coreutils/bin:/usr/local/opt/libtool/libexec/gnubin"
+            export CPPFLAGS="-I/usr/local/opt/ncurses/include -I/usr/local/opt/gettext/include"
+            export LDFLAGS="-L/usr/local/opt/ncurses/lib -L/usr/local/opt/gettext/lib"
+            export PATH="$PATH:/opt/homebrew/opt/binutils/bin:/opt/homebrew/opt/coreutils/bin:/opt/homebrew/opt/libtool/libexec/gnubin"
+            export CPPFLAGS="$CPPFLAGS -I/opt/homebrew/opt/ncurses/include -I/opt/homebrew/opt/gettext/include"
+            export LDFLAGS="$LDFLAGS -L/opt/homebrew/opt/ncurses/lib -L/opt/homebrew/opt/gettext/lib"
+          fi
+          ./bootstrap
+          ./configure --prefix=$PWD/.local/
+          make
+          make install
+          tar cf ct-ng.tar .local/
+
+      - name: "Upload crosstool-ng"
+        uses: actions/upload-artifact@v4
+        with:
+          name: crosstool.${{ matrix.runner }}
+          path: ct-ng.tar
+
+  tarballs:
+    name: "Download required tarballs"
+    needs: [crosstool]
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: "Clone toolchains repo"
+        uses: actions/checkout@v4
+
+      - name: "Download copy of crosstool-ng"
+        uses: actions/download-artifact@v4
+        with:
+          name: crosstool.linuxX64
+
+      - name: "Extract copy of crosstool-ng"
+        run: |
+          tar xf ct-ng.tar
+
+      - name: "Prerequisites (Linux)"
+        if: ${{ runner.os == 'Linux' }}
+        run: |
+          sudo apt-get install -y gperf help2man libtool-bin
+          echo "$GITHUB_WORKSPACE/.local/bin" >> $GITHUB_PATH
+
+      - name: "Gather source tarballs"
+        run: |
+          # Clear out the tools prefix so we can run everything, even without a bootstrap compiler present
+          for f in $(ls *.sh); do ./$f --tools-prefix= source; done
+          tar cvf tarballs.tar tarballs
+
+      - name: "Upload source tarballs"
+        uses: actions/upload-artifact@v4
+        with:
+          name: tarballs.tar
+          path: tarballs.tar
+
+  # Build a copy of linux/X64 toolchain to bootstrap the rest so that the resulting compilers are compatible with the old glibc.
+  bootstrap-linuxX64-toolchain:
+    name: "Build bootstrap linuxX64 toolchain"
+    needs: [tarballs]
+    uses: ./.github/workflows/create_one_toolchain.yaml
+    with:
+      runner_labels_json: '["ubuntu-22.04"]'
+      crosstool_host_os: linuxX64
+      build_host: linuxX64
+      target_host: linuxX64
+      build_script: x64linux-native-bootstrap.sh
+      fetch_bootstrap: false
+      toolchain_suffix: "_qmk_bootstrap"
+
+  canadian-host-toolchains:
+    name: "Build canadian host toolchains"
+    needs: [bootstrap-linuxX64-toolchain]
+    strategy:
+      fail-fast: false
+      matrix:
+        target_host: [linuxARM64, windowsX64]
+        include:
+          - target_host: linuxARM64
+            build_script: aarch64linux-native.sh
+          - target_host: windowsX64
+            build_script: win64-native.sh
+    uses: ./.github/workflows/create_one_toolchain.yaml
+    with:
+      runner_labels_json: '["ubuntu-22.04"]'
+      crosstool_host_os: linuxX64
+      build_host: linuxX64
+      target_host: ${{ matrix.target_host }}
+      build_script: ${{ matrix.build_script }}
+
+  native-toolchains:
+    name: "Build native toolchains"
+    needs: [bootstrap-linuxX64-toolchain]
+    strategy:
+      fail-fast: false
+      matrix:
+        build_host: [linuxX64, macosX64, macosARM64]
+        target_host: [baremetalARM, baremetalAVR, baremetalRV32]
+        include:
+          - build_host: linuxX64
+            runner_labels_json: '["ubuntu-22.04"]'
+          - build_host: macosX64
+            runner_labels_json: '["macos-12"]'
+          - build_host: macosARM64
+            runner_labels_json: '["macos-14"]' #'["self-hosted", "macOS", "ARM64"]'
+          - target_host: baremetalARM
+            build_script: arm-native.sh
+          - target_host: baremetalAVR
+            build_script: avr-native.sh
+          - target_host: baremetalRV32
+            build_script: riscv32-native.sh
+    uses: ./.github/workflows/create_one_toolchain.yaml
+    with:
+      runner_labels_json: ${{ matrix.runner_labels_json }}
+      crosstool_host_os: ${{ matrix.build_host }}
+      build_host: ${{ matrix.build_host }}
+      target_host: ${{ matrix.target_host }}
+      build_script: ${{ matrix.build_script }}
+
+  canadian-toolchains:
+    name: "Build canadian toolchains"
+    needs: [canadian-host-toolchains]
+    strategy:
+      fail-fast: false
+      matrix:
+        build_host: [linuxARM64, windowsX64]
+        target_host: [baremetalARM, baremetalAVR, baremetalRV32]
+        include:
+          - build_host: linuxARM64
+            script_suffix: "-aarch64linux-canadian.sh"
+          - build_host: windowsX64
+            script_suffix: "-win64-canadian.sh"
+          - target_host: baremetalARM
+            script_prefix: arm
+          - target_host: baremetalAVR
+            script_prefix: avr
+          - target_host: baremetalRV32
+            script_prefix: riscv32
+    uses: ./.github/workflows/create_one_toolchain.yaml
+    with:
+      runner_labels_json: '["ubuntu-22.04"]'
+      crosstool_host_os: linuxX64
+      canadian_build: true
+      build_host: ${{ matrix.build_host }}
+      target_host: ${{ matrix.target_host }}
+      build_script: ${{ matrix.script_prefix }}${{ matrix.script_suffix }}
+
+  native-linuxX64-toolchain:
+    name: "Build native linuxX64 toolchain"
+    needs: [bootstrap-linuxX64-toolchain]
+    uses: ./.github/workflows/create_one_toolchain.yaml
+    with:
+      runner_labels_json: '["ubuntu-22.04"]'
+      crosstool_host_os: linuxX64
+      build_host: linuxX64
+      target_host: linuxX64
+      build_script: x64linux-native.sh
+
+  canadian-windowsX64-toolchain:
+    name: "Build native windowsX64 toolchain"
+    needs: [canadian-toolchains]
+    uses: ./.github/workflows/create_one_toolchain.yaml
+    with:
+      runner_labels_json: '["ubuntu-22.04"]'
+      crosstool_host_os: linuxX64
+      canadian_build: true
+      build_host: windowsX64
+      target_host: windowsX64
+      build_script: win64-win64-canadian.sh
+
+  canadian-linuxARM64-toolchain:
+    name: "Build native linuxARM64 toolchain"
+    needs: [canadian-toolchains]
+    uses: ./.github/workflows/create_one_toolchain.yaml
+    with:
+      runner_labels_json: '["ubuntu-22.04"]'
+      crosstool_host_os: linuxX64
+      canadian_build: true
+      build_host: linuxARM64
+      target_host: linuxARM64
+      build_script: aarch64linux-aarch64linux-canadian.sh
+
+  publish:
+    name: Publish toolchains
+    needs: [bootstrap-linuxX64-toolchain, native-toolchains, canadian-toolchains, native-linuxX64-toolchain, canadian-windowsX64-toolchain, canadian-linuxARM64-toolchain]
+    if: always() && !cancelled()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download toolchains
+        if: always() && !cancelled()
+        uses: actions/download-artifact@v4
+        with:
+          pattern: toolchain-*
+          path: .
+          merge-multiple: true
+
+      - name: Generate pre-release... release
+        uses: marvinpinto/action-automatic-releases@latest
+        if: always() && !cancelled() && github.ref == 'refs/heads/main'
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: latest
+          prerelease: true
+          title: Development Build
+          files: |
+            qmk_toolchain*
+
+      - name: Generate release
+        uses: marvinpinto/action-automatic-releases@latest
+        if: always() && !cancelled() && startsWith(github.ref, 'refs/tags/v')
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          prerelease: false
+          files: |
+            qmk_toolchain*

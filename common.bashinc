@@ -1,0 +1,361 @@
+#!/usr/bin/env bash
+# Copyright 2024 Nick Brassel (@tzarc)
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+function havecmd() {
+    type "${1}" >/dev/null 2>&1 || return 1
+}
+
+havecmd gsed && SED=gsed || SED=sed
+
+function verify_crosstool() {
+    if ! havecmd ct-ng; then
+        echo "ct-ng not found in PATH. Please install crosstool-ng first." >&2
+        exit 1
+    fi
+}
+
+function fn_os() {
+    local os_name=$(echo ${1:-} | tr 'A-Z' 'a-z')
+    if [[ -z "$os_name" ]]; then
+        os_name=$(uname -s | tr 'A-Z' 'a-z')
+    fi
+    case "$os_name" in
+    *darwin* | *macos*)
+        echo macos
+        ;;
+    *windows* | *mingw* | *w64*)
+        echo windows
+        ;;
+    *linux*)
+        echo linux
+        ;;
+    *none* | *unknown* | *picolibc* | *nano*)
+        echo baremetal
+        ;;
+    *)
+        echo unknown
+        ;;
+    esac
+}
+
+function fn_arch() {
+    local arch_name=$(echo ${1:-} | tr 'A-Z' 'a-z')
+    if [[ -z "$arch_name" ]]; then
+        arch_name=$(uname -m | tr 'A-Z' 'a-z')
+    fi
+    case "$arch_name" in
+    *arm64* | *aarch64*)
+        echo ARM64
+        ;;
+    *arm*)
+        echo ARM
+        ;;
+    *riscv32*)
+        echo RV32
+        ;;
+    *avr*)
+        echo AVR
+        ;;
+    *x86_64* | *x64*)
+        echo X64
+        ;;
+    *)
+        echo unknown
+        ;;
+    esac
+}
+
+function fn_os_arch() {
+    echo $(fn_os ${1:-})$(fn_arch ${2:-})
+}
+
+function fn_os_arch_fromtriplet() {
+    local input_var=${1:-}
+
+    # AVR is a special snowflake.
+    if [[ "$input_var" == "avr" ]]; then
+        fn_os_arch_fromtriplet avr-none-none
+        return
+    fi
+
+    local input_arch=$(echo $input_var | cut -d'-' -f1)
+    local input_os=$(echo $input_var | cut -d'-' -f2)
+
+    # Try to skip vendor
+    if [[ "$input_os" == "unknown" ]] || [[ "$input_os" == "none" ]] || [[ "$input_os" == "pc" ]] || [[ "$input_os" == "rpi3" ]] || [[ "$input_os" == "w64" ]]; then
+        input_os=$(echo $input_var | cut -d'-' -f3)
+    fi
+
+    # If we're into the ABI stuff, then backtrack
+    if [[ "$input_os" == "eabi" ]] || [[ "$input_os" == "elf" ]] || [[ "$input_os" == "mingw32" ]]; then
+        input_os=$(echo $input_var | cut -d'-' -f2)
+    fi
+
+    fn_os_arch $input_os $input_arch
+}
+
+function build_one_args() {
+    cat <<__EOT__
+--help                  -- Shows this help text
+--build-target=<target> -- Which ct-ng build target to execute, default is 'build' (optional)
+--sample-name=<sample>  -- Seeds the crosstool-ng build with the sample configuration (required)
+--vendor-name=<vendor>  -- Overrides the vendor previously supplied by the sample (optional)
+--canadian-host=<host>  -- The intended final host machine that the toolchain will be executed (optional)
+--no-cross-gdb-python   -- Disabled python when building cross-gdb for canadian builds (optional)
+--libc=<flavour>        -- Overrides the C library to build. Usually 'picolibc', 'newlib', or 'none'. (optional)
+--extra-newlib-nano     -- Builds newlib-nano in addition to the usual C library (optional)
+--extra-picolibc        -- Builds picolibc in addition to the usual C library (optional)
+--static-toolchain      -- Builds the toolchain such that it's statically linked (optional)
+--multilib-list=<value> -- Overrides the list of multilib targets generated. Sets \$CT_CC_GCC_MULTILIB_LIST. (optional)
+--binutils-plugins      -- Builds the toolchain with binutils plugins enabled (optional) -- cannot be used with \`--static-toolchain\`
+--tools-prefix=<value>  -- Override the build toolchain. For example \`x86_64-unknown-linux-gnu-\`, with the trailing slash. \`gcc\` et.al. will be appended. (optional)
+--dir-suffix=<value>    -- Appends a suffix to the toolchain output directory. (optional)
+__EOT__
+}
+
+function build_one_help() {
+    for arg in "$@"; do
+        case "$arg" in
+        --help)
+            echo
+            echo "$(basename $this_script) $(build_one_args | grep '(required)' | ${SED} -e 's@\s\+--.*@@g') $(build_one_args | sort | grep '(optional)' | ${SED} -e 's@\s\+--.*@@g' -e 's@^@[@' -e 's@$@]@' | tr '\n' ' ')"
+            echo
+            build_one_args
+            exit 0
+            ;;
+        esac
+    done
+}
+
+function build_one() {
+    set -eEuo pipefail
+    umask 022
+    verify_crosstool
+
+    while read arg; do
+        unset $arg
+    done < <(build_one_args | ${SED} -e 's@\s\+--.*@@g' -e 's@^--@@g' -e 's@-@_@g' -e 's@=.*@@g')
+    unset arg
+
+    local -a positional_args=()
+    while [[ ! -z "${1:-}" ]]; do
+        case "$1" in
+        --*=*)
+            N=${1%%=*}
+            N=${N##--}
+            N=$(echo $N | tr '-' '_')
+            V=${1##*=}
+            eval local $N="$V"
+            ;;
+        --*)
+            N=${1##--}
+            N=$(echo $N | tr '-' '_')
+            eval local $N=true
+            ;;
+        *)
+            positional_args+=($1)
+            ;;
+        esac
+        shift
+        unset N
+        unset V
+    done
+
+    if [[ ! -z "${help:-}" ]]; then
+        build_one_args
+        exit 0
+    fi
+
+    [[ -d "$script_dir/tarballs" ]] || mkdir -p $script_dir/tarballs
+
+    if [[ ! -z "${canadian_host:-}" ]]; then
+        name_host=$(fn_os_arch_fromtriplet $canadian_host)
+        name_target=$(fn_os_arch_fromtriplet $sample_name)
+    else
+        name_host=$(fn_os_arch)
+        name_target=$(fn_os_arch_fromtriplet $sample_name)
+    fi
+    target_dir="host_${name_host}-target_${name_target}${dir_suffix:-}"
+
+    echo ============
+    echo ' BUILD TARGET:' $target_dir
+    echo '    BUILD DIR:' "$script_dir/build/$target_dir"
+    echo 'TOOLCHAIN DIR:' "$script_dir/toolchains/$target_dir"
+    echo ============
+    echo
+
+    local build_dir="$script_dir/build/$target_dir"
+    local toolchain_dir="$script_dir/toolchains/$target_dir"
+
+    mkdir -p "$build_dir"
+    cd "$build_dir"
+
+    [[ ! -e .config ]] || rm .config
+    ct-ng $sample_name
+    echo "CT_EXPERIMENTAL=y" >>.config
+    echo "CT_FORCE_EXTRACT=y" >>.config
+    ct-ng olddefconfig
+
+    ${SED} -i \
+        -e '/CT_LOG_PROGRESS_BAR/s/y$/n/' \
+        -e 's/^.*CT_PREFIX_DIR_RO.*$/CT_PREFIX_DIR_RO=n/' \
+        -e 's/^.*CT_CC_LANG_CXX.*$/CT_CC_LANG_CXX=y/' \
+        -e 's/^.*CT_CC_GCC_LTO_ZSTD.*$/CT_CC_GCC_LTO_ZSTD=y/' \
+        -e 's/^.*CT_DEBUG_GDB.*$/CT_DEBUG_GDB=y/' \
+        -e 's@^.*CT_LOCAL_TARBALLS_DIR.*$@CT_LOCAL_TARBALLS_DIR="'"$script_dir/tarballs"'"@' \
+        .config
+
+    # Swap to an older version of Linux to avoid issues with older distros, especially things like older Debian with Raspberry Pi targets.
+    ${SED} -i \
+        -e 's/^.*CT_LINUX_V_.*$/# CT_LINUX_V_???? is not set/' \
+        -e 's/^.*CT_LINUX_VERSION.*$/CT_LINUX_VERSION="4.19"/' \
+        -e 's/^.*CT_GLIBC_MIN_KERNEL.*$/CT_GLIBC_MIN_KERNEL="4.19"/' \
+        .config
+    echo CT_LINUX_V_4_19=y >>.config
+    echo unset CT_GLIBC_KERNEL_VERSION_NONE >>.config
+    echo CT_GLIBC_KERNEL_VERSION_AS_HEADERS=y >>.config
+    echo CT_GLIBC_MIN_KERNEL="\${CT_LINUX_VERSION}" >>.config
+    ct-ng olddefconfig
+
+    if [[ ! -z "${binutils_plugins:-}" ]] && [[ ! -z "${static_toolchain:-}" ]]; then
+        echo "Cannot use \`--binutils-plugins\` and \`--static-toolchain\` together." >&2
+        exit 1
+    fi
+
+    if [[ ! -z "${binutils_plugins:-}" ]]; then
+        echo "CT_BINUTILS_PLUGINS=y" >> .config
+        ct-ng olddefconfig
+    fi
+
+    if [[ ! -z "${static_toolchain:-}" ]]; then
+        ${SED} -i \
+            -e 's/^.*CT_STATIC_TOOLCHAIN.*$/CT_STATIC_TOOLCHAIN=y/' \
+            -e 's/^.*CT_WANTS_STATIC_LINK.*$/CT_WANTS_STATIC_LINK=y/' \
+            -e 's/^.*CT_WANTS_STATIC_LINK_CXX.*$/CT_WANTS_STATIC_LINK_CXX=y/' \
+            .config
+        ct-ng olddefconfig
+    fi
+
+    if [[ ! -z "${libc:-}" ]]; then
+        echo "CT_LIBC_$(echo $libc | tr 'a-z' 'A-Z')=y" >>.config
+        echo "CT_LIBC=\"$(echo $libc | tr 'A-Z' 'a-z')\"" >>.config
+        echo 'CT_COMP_LIBS_NEWLIB_NANO=n' >>.config
+        echo 'CT_COMP_LIBS_PICOLIBC=n' >>.config
+        ct-ng olddefconfig
+
+        if [[ "${libc}" == "newlib" ]]; then
+            ${SED} -i \
+                -e 's/^.*CT_LIBC_NEWLIB_DISABLE_SUPPLIED_SYSCALLS.*$/CT_LIBC_NEWLIB_DISABLE_SUPPLIED_SYSCALLS=n/' \
+                .config
+        fi
+        ct-ng olddefconfig
+    fi
+
+    if [[ ! -z "${extra_newlib_nano:-}" ]]; then
+        echo 'CT_COMP_LIBS_NEWLIB_NANO=y' >>.config
+        ct-ng olddefconfig
+        ${SED} -i \
+            -e 's/^.*CT_LIBC_NEWLIB_EXTRA_SECTIONS.*$/CT_LIBC_NEWLIB_EXTRA_SECTIONS=y/' \
+            -e 's/^.*CT_LIBC_NEWLIB_NANO_MALLOC.*$/CT_LIBC_NEWLIB_NANO_MALLOC=y/' \
+            -e 's/^.*CT_COMP_LIBS_NEWLIB_NANO.*$/CT_COMP_LIBS_NEWLIB_NANO=y/' \
+            -e 's/^.*CT_NEWLIB_NANO_INSTALL_IN_TARGET.*$/CT_NEWLIB_NANO_INSTALL_IN_TARGET=y/' \
+            -e 's/^.*CT_LIBC_NEWLIB_NANO_EXTRA_SECTIONS.*$/CT_LIBC_NEWLIB_NANO_EXTRA_SECTIONS=y/' \
+            .config
+        ct-ng olddefconfig
+    fi
+
+    if [[ ! -z "${extra_picolibc:-}" ]]; then
+        echo 'CT_COMP_LIBS_PICOLIBC=y' >>.config
+        ct-ng olddefconfig
+        ${SED} -i \
+            -e 's/^.*CT_PICOLIBC_INSTALL_IN_TARGET.*$/CT_PICOLIBC_INSTALL_IN_TARGET=y/' \
+            -e 's/^.*CT_LIBC_PICOLIBC_GCC_LIBSTDCXX.*$/CT_LIBC_PICOLIBC_GCC_LIBSTDCXX=y/' \
+            .config
+        ct-ng olddefconfig
+    fi
+
+    if [[ ! -z "${multilib_list:-}" ]]; then
+        ${SED} -i \
+            -e 's/^.*CT_CC_GCC_MULTILIB_LIST.*$/CT_CC_GCC_MULTILIB_LIST="'$multilib_list'"/' \
+            .config
+        ct-ng olddefconfig
+    fi
+
+    if [[ ! -z "${vendor_name:-}" ]]; then
+        ${SED} -i \
+            -e 's/^.*CT_TARGET_VENDOR.*$/CT_TARGET_VENDOR="'$vendor_name'"/' \
+            .config
+        ct-ng olddefconfig
+    fi
+
+    if [[ ! -z "${no_cross_gdb_python:-}" ]]; then
+        ${SED} -i \
+            -e 's/^.*CT_GDB_CROSS_PYTHON.*$/# CT_GDB_CROSS_PYTHON is not set/' \
+            .config
+        ct-ng olddefconfig
+    fi
+
+    if [[ ! -z "${canadian_host:-}" ]]; then
+        ${SED} -i \
+            -e 's/^.*CT_CROSS.*$/# CT_CROSS is not set/' \
+            -e 's/^.*CT_CANADIAN.*$/CT_CANADIAN=y/' \
+            -e 's/^.*CT_TOOLCHAIN_TYPE.*$/CT_TOOLCHAIN_TYPE="canadian"/' \
+            .config
+
+        echo "CT_HOST=\"${canadian_host}\"" >>.config
+        ct-ng olddefconfig
+    fi
+
+    if [[ ! -z "$(echo $sample_name | grep linux)" ]]; then
+        # Swap to an older version of glibc to avoid issues with older distros, especially things like older Debian with Raspberry Pi targets.
+        # See the glibc version compat list here: https://abi-laboratory.pro/?view=timeline&l=glibc -- 2.28 seems safe enough?
+        ${SED} -i \
+            -e 's/^.*CT_GLIBC_V_.*$/# CT_GLIBC_V_???? is not set/' \
+            .config
+        echo CT_GLIBC_V_2_28=y >>.config
+        ct-ng olddefconfig
+    fi
+
+    ${SED} -i \
+        -e 's@^.*CT_PREFIX_DIR=.*$@CT_PREFIX_DIR="'${toolchain_dir}'"@' \
+        .config
+
+    echo "CT_DEBUG_CT=y" >>.config
+    ct-ng olddefconfig
+    echo "CT_DEBUG_CT_SAVE_STEPS=y" >>.config
+    echo "CT_DEBUG_CT_SAVE_STEPS_GZIP=y" >>.config
+    ct-ng olddefconfig
+    echo "CT_TOOLCHAIN_PKGVERSION=\"qmk_toolchain-\${CT_GCC_VERSION}\"" >>.config
+    ct-ng olddefconfig
+
+    if [[ ! -z "${tools_prefix:-}" ]]; then
+        echo "CT_BUILD_PREFIX=\"${tools_prefix}\"" >>.config
+        ct-ng olddefconfig
+    fi
+
+    # Add the other compilers to the PATH for use in canadian builds
+    while read bindir; do
+        export PATH="$bindir:$PATH"
+    done < <(find "$script_dir/toolchains/host_$(fn_os_arch)"* -maxdepth 1 -type d -name bin)
+    unset bindir
+
+    echo '$PATH:'
+    echo "$PATH" | tr ':' '\n'
+
+    hash -r
+    while read arg; do
+        unset $arg
+    done < <(build_one_args | ${SED} -e 's@\s\+--.*@@g' -e 's@^--@@g' -e 's@-@_@g' -e 's@=.*@@g')
+    unset arg
+
+    if [[ ${#positional_args[@]} -eq 0 ]]; then
+        positional_args+=(build)
+    fi
+
+    if [[ ${#positional_args[@]} -eq 1 ]] && [[ "${positional_args[0]}" == "source" ]]; then
+        ct-ng source || true
+    else
+        ct-ng ${positional_args[@]}
+    fi
+}

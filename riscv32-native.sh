@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Copyright 2024 Nick Brassel (@tzarc)
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+this_script=$(realpath "${BASH_SOURCE[0]}")
+script_dir=$(dirname "${this_script}")
+source "${script_dir}/common.bashinc"
+
+build_one_help "$@"
+
+if [[ $(uname -s) == "Linux" ]]; then
+    extra_args="--tools-prefix=x86_64-qmk_bootstrap-linux-gnu-"
+fi
+
+build_one \
+    --sample-name=riscv32-picolibc-elf \
+    --vendor-name=unknown \
+    --binutils-plugins \
+    --no-cross-gdb-python \
+    ${extra_args:-} \
+    "$@"

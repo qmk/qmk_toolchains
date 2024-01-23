@@ -1,0 +1,93 @@
+---
+name: Create Toolchain
+
+on:
+  workflow_call:
+    inputs:
+      runner_labels_json: { type: string, required: true }
+      crosstool_host_os: { type: string, required: true }
+      build_host: { type: string, required: true }
+      target_host: { type: string, required: true }
+      build_script: { type: string, required: true }
+      canadian_build: { type: boolean, required: false, default: false }
+      fetch_bootstrap: { type: boolean, required: false, default: true }
+      toolchain_suffix: { type: string, required: false, default: "" }
+
+jobs:
+  # Split up the build as compiling newlib/libstdc++ targeting ARM takes so damn long.
+  phase1:
+    name: Build toolchain (phase 1)
+    uses: ./.github/workflows/invoke_crosstool.yaml
+    with:
+      runner_labels_json: ${{ inputs.runner_labels_json }}
+      crosstool_host_os: ${{ inputs.crosstool_host_os }}
+      build_host: ${{ inputs.build_host }}
+      target_host: ${{ inputs.target_host }}
+      build_script: ${{ inputs.build_script }}
+      canadian_build: ${{ inputs.canadian_build }}
+      fetch_bootstrap: ${{ inputs.fetch_bootstrap }}
+      toolchain_suffix: ${{ inputs.toolchain_suffix }}
+      crosstool_args: 'build STOP=cc_for_build'
+      restore_state: false
+      phase_number: 1
+
+  phase2:
+    name: Build toolchain (phase 2)
+    needs: [phase1]
+    uses: ./.github/workflows/invoke_crosstool.yaml
+    with:
+      runner_labels_json: ${{ inputs.runner_labels_json }}
+      crosstool_host_os: ${{ inputs.crosstool_host_os }}
+      build_host: ${{ inputs.build_host }}
+      target_host: ${{ inputs.target_host }}
+      build_script: ${{ inputs.build_script }}
+      canadian_build: ${{ inputs.canadian_build }}
+      fetch_bootstrap: ${{ inputs.fetch_bootstrap }}
+      toolchain_suffix: ${{ inputs.toolchain_suffix }}
+      crosstool_args: 'build RESTART=cc_for_host STOP=libc_post_cc'
+      phase_number: 2
+
+  phase3:
+    name: Build toolchain (phase 3)
+    needs: [phase2]
+    uses: ./.github/workflows/invoke_crosstool.yaml
+    with:
+      runner_labels_json: ${{ inputs.runner_labels_json }}
+      crosstool_host_os: ${{ inputs.crosstool_host_os }}
+      build_host: ${{ inputs.build_host }}
+      target_host: ${{ inputs.target_host }}
+      build_script: ${{ inputs.build_script }}
+      canadian_build: ${{ inputs.canadian_build }}
+      fetch_bootstrap: ${{ inputs.fetch_bootstrap }}
+      toolchain_suffix: ${{ inputs.toolchain_suffix }}
+      crosstool_args: 'build RESTART=companion_libs_for_target STOP=companion_libs_for_target'
+      phase_number: 3
+
+  phase4:
+    name: Build toolchain (phase 4)
+    needs: [phase3]
+    uses: ./.github/workflows/invoke_crosstool.yaml
+    with:
+      runner_labels_json: ${{ inputs.runner_labels_json }}
+      crosstool_host_os: ${{ inputs.crosstool_host_os }}
+      build_host: ${{ inputs.build_host }}
+      target_host: ${{ inputs.target_host }}
+      build_script: ${{ inputs.build_script }}
+      canadian_build: ${{ inputs.canadian_build }}
+      fetch_bootstrap: ${{ inputs.fetch_bootstrap }}
+      toolchain_suffix: ${{ inputs.toolchain_suffix }}
+      crosstool_args: 'build RESTART=binutils_for_target'
+      save_state: false
+      toolchain_tarball: true
+      phase_number: 4
+
+  phase5:
+    name: Build toolchain (phase 5)
+    needs: [phase4]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Delete build state
+        uses: geekyeggo/delete-artifact@v4
+        with:
+            name: state-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}.tar
