@@ -179,9 +179,12 @@ jobs:
           else
             export STAT="stat"
           fi
+          if [[ "${{ inputs.build_host }}" == "windowsX64" ]] || [[ "${{ inputs.build_host }}" == "windowsARM64" ]]; then
+            export DEREF_SYMLINKS_ARGS="--dereference --hard-dereference"
+          fi
           latest_state=$(dirname $(find $(find build -mindepth 4 -maxdepth 5 -type d -name state) -mindepth 2 -maxdepth 2 -type f -name env.sh -print0 | xargs -0r $STAT -c '%w|%n' | sort | cut -d'|' -f2 | tail -n1))
           source "$latest_state/env.sh"
-          tar cf qmk_toolchain-gcc${CT_GCC_VERSION}-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}.tar -C toolchains host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}
+          tar cf qmk_toolchain-gcc${CT_GCC_VERSION}-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}.tar -C toolchains host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }} ${DEREF_SYMLINKS_ARGS:-}
           xz -T 0 -z -7 qmk_toolchain-gcc${CT_GCC_VERSION}-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}.tar
 
       - name: Upload toolchain
