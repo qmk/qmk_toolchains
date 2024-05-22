@@ -72,8 +72,7 @@ jobs:
       - name: Prerequisites (Linux)
         if: ${{ runner.os == 'Linux' }}
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential gperf help2man libtool-bin meson
+          ./ubuntu-prereqs.sh
           echo "$GITHUB_WORKSPACE/.local/bin" >> $GITHUB_PATH
       - name: Prerequisites (macOS)
         if: ${{ runner.os == 'macOS' }}
