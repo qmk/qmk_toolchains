@@ -13,4 +13,5 @@ build_one \
     --canadian-host=aarch64-unknown-linux-gnu \
     --vendor-name=unknown \
     --no-cross-gdb-python \
+    --build-host-compile \
     "$@"

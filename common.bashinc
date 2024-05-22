@@ -111,6 +111,7 @@ function build_one_args() {
 --binutils-plugins      -- Builds the toolchain with binutils plugins enabled (optional) -- cannot be used with \`--static-toolchain\`
 --tools-prefix=<value>  -- Override the build toolchain. For example \`x86_64-unknown-linux-gnu-\`, with the trailing slash. \`gcc\` et.al. will be appended. (optional)
 --dir-suffix=<value>    -- Appends a suffix to the toolchain output directory. (optional)
+--build-host-compile    -- Runs a build producing an earlier version of gcc, for subsequent gcc generated binary compatibility reasons
 __EOT__
 }
 
@@ -217,6 +218,16 @@ function build_one() {
     echo CT_GLIBC_KERNEL_VERSION_AS_HEADERS=y >>.config
     echo CT_GLIBC_MIN_KERNEL="\${CT_LINUX_VERSION}" >>.config
     ct-ng olddefconfig
+
+    if [[ ! -z "${build_host_compile:-}" ]]; then
+        echo "# CT_GCC_V_14 is not set" >> .config
+        echo "# CT_GCC_V_13 is not set" >> .config
+        echo "# CT_GCC_V_12 is not set" >> .config
+        echo "# CT_GCC_V_11 is not set" >> .config
+        echo "CT_GCC_V_10=y" >> .config
+        echo "CT_GCC_VERSION=\"10.5.0\"" >> .config
+        ct-ng olddefconfig
+    fi
 
     if [[ ! -z "${binutils_plugins:-}" ]] && [[ ! -z "${static_toolchain:-}" ]]; then
         echo "Cannot use \`--binutils-plugins\` and \`--static-toolchain\` together." >&2

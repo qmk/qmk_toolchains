@@ -16,5 +16,6 @@ build_one \
     --sample-name=aarch64-rpi3-linux-gnu \
     --vendor-name=unknown \
     --no-cross-gdb-python \
+    --build-host-compile \
     ${extra_args:-} \
     "$@"

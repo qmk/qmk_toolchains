@@ -13,4 +13,5 @@ build_one \
     --vendor-name=qmk_bootstrap \
     --dir-suffix=_qmk_bootstrap \
     --no-cross-gdb-python \
+    --build-host-compile \
     "$@"
