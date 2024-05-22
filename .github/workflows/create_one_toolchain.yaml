@@ -88,6 +88,6 @@ jobs:
 
     steps:
       - name: Delete build state
-        uses: geekyeggo/delete-artifact@v4
+        uses: geekyeggo/delete-artifact@v5
         with:
             name: state-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}.tar
