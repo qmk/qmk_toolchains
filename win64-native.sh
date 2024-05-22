@@ -15,5 +15,6 @@ fi
 build_one \
     --sample-name=x86_64-w64-mingw32 \
     --no-cross-gdb-python \
+    --build-host-compile \
     ${extra_args:-} \
     "$@"
