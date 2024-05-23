@@ -220,14 +220,31 @@ function build_one() {
     ct-ng olddefconfig
 
     if [[ ! -z "${build_host_compile:-}" ]]; then
-        echo "# CT_GCC_V_14 is not set" >> .config
-        echo "# CT_GCC_V_13 is not set" >> .config
-        echo "# CT_GCC_V_12 is not set" >> .config
-        echo "# CT_GCC_V_11 is not set" >> .config
-        echo "CT_GCC_V_10=y" >> .config
-        echo "CT_GCC_VERSION=\"10.5.0\"" >> .config
+        echo "# CT_GCC_V_14 is not set" >>.config
+        echo "# CT_GCC_V_13 is not set" >>.config
+        echo "# CT_GCC_V_12 is not set" >>.config
+        echo "# CT_GCC_V_11 is not set" >>.config
+        echo "CT_GCC_V_10=y" >>.config
+        echo "CT_GCC_VERSION=\"10.5.0\"" >>.config
         ct-ng olddefconfig
     fi
+
+    # Disable unnecessary languages
+    echo "CT_CC_LANG_FORTRAN=n" >>.config
+    echo "# CT_CC_LANG_FORTRAN is not set" >>.config
+    echo "CT_CC_LANG_JIT=n" >>.config
+    echo "# CT_CC_LANG_JIT is not set" >>.config
+    echo "CT_CC_LANG_ADA=n" >>.config
+    echo "# CT_CC_LANG_ADA is not set" >>.config
+    echo "CT_CC_LANG_D=n" >>.config
+    echo "# CT_CC_LANG_D is not set" >>.config
+    echo "CT_CC_LANG_OBJC=n" >>.config
+    echo "# CT_CC_LANG_OBJC is not set" >>.config
+    echo "CT_CC_LANG_OBJCXX=n" >>.config
+    echo "# CT_CC_LANG_OBJCXX is not set" >>.config
+    echo "CT_CC_LANG_GOLANG=n" >>.config
+    echo "# CT_CC_LANG_GOLANG is not set" >>.config
+    ct-ng olddefconfig
 
     if [[ ! -z "${binutils_plugins:-}" ]] && [[ ! -z "${static_toolchain:-}" ]]; then
         echo "Cannot use \`--binutils-plugins\` and \`--static-toolchain\` together." >&2
@@ -235,7 +252,7 @@ function build_one() {
     fi
 
     if [[ ! -z "${binutils_plugins:-}" ]]; then
-        echo "CT_BINUTILS_PLUGINS=y" >> .config
+        echo "CT_BINUTILS_PLUGINS=y" >>.config
         ct-ng olddefconfig
     fi
 
