@@ -196,6 +196,22 @@ function build_one() {
     ct-ng $sample_name
     echo "CT_EXPERIMENTAL=y" >>.config
     echo "CT_FORCE_EXTRACT=y" >>.config
+
+    if [[ ! -z "${build_host_compile:-}" ]]; then
+        ${SED} -i \
+            -e 's/^.*CT_GCC_V_.*$/# CT_GCC_V_???? is not set/' \
+            -e 's/^.*CT_GCC_VERSION.*$/# CT_GCC_VERSION is not set/' \
+            -e 's/^.*CT_GCC_.*_or_later$/# CT_GCC_????_or_later is not set/' \
+            -e 's/^.*CT_GCC_REQUIRE_.*_or_later$/# CT_GCC_REQUIRE_????_or_later is not set/' \
+            -e 's/^.*CT_GCC_.*_or_older.*$/# CT_GCC_V_????_or_older is not set/' \
+            -e 's/^.*CT_GCC_.*_or_later.*$/# CT_GCC_V_????_or_later is not set/' \
+            -e 's/^.*CT_GCC_later_than_.*$/# CT_GCC_later_than_???? is not set/' \
+            -e 's/^.*CT_GCC_older_than_.*$/# CT_GCC_older_than_???? is not set/' \
+            .config
+        echo "CT_GCC_V_10=y" >>.config
+        echo "CT_GCC_VERSION=\"10.5.0\"" >>.config
+    fi
+
     ct-ng olddefconfig
 
     ${SED} -i \
@@ -218,16 +234,6 @@ function build_one() {
     echo CT_GLIBC_KERNEL_VERSION_AS_HEADERS=y >>.config
     echo CT_GLIBC_MIN_KERNEL="\${CT_LINUX_VERSION}" >>.config
     ct-ng olddefconfig
-
-    if [[ ! -z "${build_host_compile:-}" ]]; then
-        echo "# CT_GCC_V_14 is not set" >>.config
-        echo "# CT_GCC_V_13 is not set" >>.config
-        echo "# CT_GCC_V_12 is not set" >>.config
-        echo "# CT_GCC_V_11 is not set" >>.config
-        echo "CT_GCC_V_10=y" >>.config
-        echo "CT_GCC_VERSION=\"10.5.0\"" >>.config
-        ct-ng olddefconfig
-    fi
 
     # Disable unnecessary languages
     echo "CT_CC_LANG_FORTRAN=n" >>.config
