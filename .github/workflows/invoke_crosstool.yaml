@@ -27,8 +27,7 @@ jobs:
       - name: Setup workdir on Linux
         if: ${{ runner.os == 'Linux' }}
         run: |
-          sudo mkdir /t \
-            && sudo chown $(id -u):$(id -g) /t
+          sudo ln -sf $GITHUB_WORKSPACE /t
           echo "TC_WORKDIR=/t" >> $GITHUB_ENV
 
       - name: Setup workdir everywhere else
@@ -86,8 +85,6 @@ jobs:
 
       - name: Clone toolchains repo
         uses: actions/checkout@v4
-        with:
-          path: ${{ env.TC_WORKDIR }}
 
       - name: Prerequisites (Linux)
         if: ${{ runner.os == 'Linux' }}
@@ -114,11 +111,9 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: tarballs.tar
-          path: ${{ env.TC_WORKDIR }}
 
       - name: Extract source tarballs
         run: |
-          cd $TC_WORKDIR
           tar xf tarballs.tar
 
       - name: Download bootstrap toolchain
@@ -126,12 +121,10 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: toolchain-host_${{ inputs.crosstool_host_os }}-target_${{ inputs.crosstool_host_os }}_qmk_bootstrap
-          path: ${{ env.TC_WORKDIR }}
 
       - name: Extract bootstrap toolchain
         if: ${{ inputs.fetch_bootstrap && runner.os == 'Linux' }}
         run: |
-          cd $TC_WORKDIR
           mkdir -p toolchains
           tar xf qmk_toolchain*host_${{ inputs.crosstool_host_os }}-target_${{ inputs.crosstool_host_os }}_qmk_bootstrap.tar.xz -C toolchains
           rm qmk_toolchain*host_${{ inputs.crosstool_host_os }}-target_${{ inputs.crosstool_host_os }}_qmk_bootstrap.tar.xz
@@ -141,12 +134,10 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: toolchain-host_${{ inputs.crosstool_host_os }}-target_${{ inputs.build_host }}
-          path: ${{ env.TC_WORKDIR }}
 
       - name: Extract canadian host toolchain
         if: ${{ inputs.canadian_build }}
         run: |
-          cd $TC_WORKDIR
           mkdir -p toolchains
           tar xf qmk_toolchain*host_${{ inputs.crosstool_host_os }}-target_${{ inputs.build_host }}.tar.xz -C toolchains
           rm qmk_toolchain*host_${{ inputs.crosstool_host_os }}-target_${{ inputs.build_host }}.tar.xz
@@ -156,12 +147,10 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: state-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}
-          path: ${{ env.TC_WORKDIR }}
 
       - name: Extract build state
         if: ${{ inputs.restore_state }}
         run: |
-          cd $TC_WORKDIR
           # Ensure tarballs are extracted before we restore state as we've deleted $CT_COMMON_SRC_DIR before saving the state tarball
           ./${{ inputs.build_script }} +companion_tools_for_build
           # Extract the state tarball
@@ -169,7 +158,6 @@ jobs:
 
       - name: Build toolchain
         run: |
-          cd $TC_WORKDIR
           if [ "$RUNNER_OS" == "macOS" ]; then
             export PATH="$PATH:/usr/local/opt/binutils/bin:/usr/local/opt/coreutils/bin:/usr/local/opt/libtool/libexec/gnubin"
             export CPPFLAGS="-I/usr/local/opt/ncurses/include -I/usr/local/opt/gettext/include"
@@ -181,6 +169,7 @@ jobs:
             export MACOSX_DEPLOYMENT_TARGET=12.0
           fi
           # Kick off the requested build phase
+          cd $TC_WORKDIR
           ./${{ inputs.build_script }} ${{ inputs.crosstool_args }}
 
       - name: Upload build logs
@@ -189,12 +178,11 @@ jobs:
         with:
           name: build.log-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}-phase${{ inputs.phase_number }}
           path: |
-            ${{ env.TC_WORKDIR }}/**/*.log
+            **/*.log
 
       - name: Make build state
         if: ${{ inputs.save_state }}
         run: |
-          cd $TC_WORKDIR
           # We're saving state so we can resume at each step -- some of the internal build directories can be blown away as restarting from a step will recreate them.
           if [ "$RUNNER_OS" == "macOS" ]; then
             export PATH="$PATH:/usr/local/opt/coreutils/bin"
@@ -210,13 +198,12 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: state-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}
-          path: ${{ env.TC_WORKDIR }}/state-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}.tar
+          path: state-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}.tar
           overwrite: true
 
       - name: Make toolchain tarball
         if: ${{ inputs.toolchain_tarball }}
         run: |
-          cd $TC_WORKDIR
           if [ "$RUNNER_OS" == "macOS" ]; then
             export PATH="$PATH:/usr/local/opt/coreutils/bin"
             export STAT="gstat"
@@ -237,7 +224,7 @@ jobs:
         with:
           name: toolchain-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}
           path: |
-            ${{ env.TC_WORKDIR }}/qmk_toolchain-gcc*-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}.tar.xz
+            qmk_toolchain-gcc*-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}.tar.xz
 
       - name: Unmount case-sensitive workspace volume for macOS
         if: always()
