@@ -24,17 +24,6 @@ jobs:
     runs-on: ${{ fromJSON(inputs.runner_labels_json) }}
 
     steps:
-      - name: Setup workdir on Linux
-        if: ${{ runner.os == 'Linux' }}
-        run: |
-          sudo ln -sf $GITHUB_WORKSPACE /t
-          echo "TC_WORKDIR=/t" >> $GITHUB_ENV
-
-      - name: Setup workdir everywhere else
-        if: ${{ runner.os != 'Linux' }}
-        run: |
-          echo "TC_WORKDIR=$GITHUB_WORKSPACE" >> $GITHUB_ENV
-
       - name: Show disk space available - before
         run: |
           df -h
@@ -50,6 +39,18 @@ jobs:
           remove-haskell: "true"
           remove-codeql: "true"
           remove-docker-images: "true"
+
+      - name: Setup workdir on Linux
+        if: ${{ runner.os == 'Linux' }}
+        run: |
+          sudo mkdir /t
+          sudo mount --bind $GITHUB_WORKSPACE /t
+          echo "TC_WORKDIR=/t" >> $GITHUB_ENV
+
+      - name: Setup workdir everywhere else
+        if: ${{ runner.os != 'Linux' }}
+        run: |
+          echo "TC_WORKDIR=$GITHUB_WORKSPACE" >> $GITHUB_ENV
 
       - name: Create case-sensitive workspace volume for macOS
         if: ${{ runner.os == 'macOS' }}
