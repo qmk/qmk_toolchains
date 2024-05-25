@@ -2,6 +2,6 @@
 	"name": "Ubuntu",
 	"image": "mcr.microsoft.com/devcontainers/base:jammy",
 	"postCreateCommand": "./ubuntu-prereqs.sh && ./setup-crosstool-ng.sh",
-	"workspaceFolder": "/home/runner/work/qmk_toolchains/qmk_toolchains", // matches GHA runner location
-	"workspaceMount": "source=${localWorkspaceFolder},target=/home/runner/work/qmk_toolchains/qmk_toolchains,type=bind"
+	"workspaceFolder": "/t", // matches GHA runner location
+	"workspaceMount": "source=${localWorkspaceFolder},target=/t,type=bind"
 }
