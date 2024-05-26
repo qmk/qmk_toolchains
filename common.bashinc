@@ -210,6 +210,12 @@ function build_one() {
             .config
         echo "CT_GCC_V_12=y" >>.config
         echo "CT_GCC_VERSION=\"12.4.0\"" >>.config
+        ${SED} -i \
+            -e 's/^.*CT_MINGW_W64_V_.*$/# CT_MINGW_W64_V_???? is not set/' \
+            -e 's/^.*CT_MINGW_W64_VERSION.*$/# CT_MINGW_W64_VERSION is not set/' \
+            .config
+        echo "CT_MINGW_W64_V_V10_0=y" >>.config
+        echo "CT_GCC_VERSION=\"10.0.0\"" >>.config
     fi
 
     ct-ng olddefconfig
