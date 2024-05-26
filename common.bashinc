@@ -208,8 +208,8 @@ function build_one() {
             -e 's/^.*CT_GCC_later_than_.*$/# CT_GCC_later_than_???? is not set/' \
             -e 's/^.*CT_GCC_older_than_.*$/# CT_GCC_older_than_???? is not set/' \
             .config
-        echo "CT_GCC_V_13=y" >>.config
-        echo "CT_GCC_VERSION=\"13.2.0\"" >>.config
+        echo "CT_GCC_V_12=y" >>.config
+        echo "CT_GCC_VERSION=\"12.4.0\"" >>.config
     fi
 
     ct-ng olddefconfig
