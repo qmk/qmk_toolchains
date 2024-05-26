@@ -24,6 +24,21 @@ jobs:
     runs-on: ${{ fromJSON(inputs.runner_labels_json) }}
 
     steps:
+      - name: Clone toolchains repo for prereqs
+        uses: actions/checkout@v4
+
+      - name: Prerequisites (Linux)
+        if: ${{ runner.os == 'Linux' }}
+        run: |
+          ./ubuntu-prereqs.sh
+          echo "$GITHUB_WORKSPACE/.local/bin" >> $GITHUB_PATH
+
+      - name: Prerequisites (macOS)
+        if: ${{ runner.os == 'macOS' }}
+        run: |
+          brew install autoconf automake bash binutils coreutils gawk gnu-sed help2man make meson ncurses pkg-config python3
+          echo "$GITHUB_WORKSPACE/.local/bin" >> $GITHUB_PATH
+
       - name: Show disk space available - before
         run: |
           df -h
@@ -86,18 +101,6 @@ jobs:
 
       - name: Clone toolchains repo
         uses: actions/checkout@v4
-
-      - name: Prerequisites (Linux)
-        if: ${{ runner.os == 'Linux' }}
-        run: |
-          ./ubuntu-prereqs.sh
-          echo "$GITHUB_WORKSPACE/.local/bin" >> $GITHUB_PATH
-
-      - name: Prerequisites (macOS)
-        if: ${{ runner.os == 'macOS' }}
-        run: |
-          brew install autoconf automake bash binutils coreutils gawk gnu-sed help2man make meson ncurses pkg-config python3
-          echo "$GITHUB_WORKSPACE/.local/bin" >> $GITHUB_PATH
 
       - name: Download copy of crosstool-ng
         uses: actions/download-artifact@v4
