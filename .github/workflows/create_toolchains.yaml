@@ -20,7 +20,7 @@ jobs:
           - runner: macosX64
             host_labels: '["macos-12"]'
           - runner: macosARM64
-            host_labels: '["macos-14"]' #'["self-hosted", "macOS", "ARM64"]'
+            host_labels: '["macos-14"]'
 
     steps:
       - name: "Clone crosstool-ng repo"
@@ -150,7 +150,7 @@ jobs:
           - build_host: macosX64
             runner_labels_json: '["macos-12"]'
           - build_host: macosARM64
-            runner_labels_json: '["macos-14"]' #'["self-hosted", "macOS", "ARM64"]'
+            runner_labels_json: '["macos-14"]'
           - target_host: baremetalARM
             build_script: arm-native.sh
           - target_host: baremetalAVR
