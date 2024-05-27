@@ -28,6 +28,7 @@ jobs:
         with:
           repository: crosstool-ng/crosstool-ng
           ref: master
+          fetch-depth: 0
 
       - name: "Host info"
         run: |
