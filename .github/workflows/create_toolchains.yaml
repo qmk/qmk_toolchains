@@ -9,6 +9,9 @@ on:
 
 jobs:
   crosstool:
+    # only actually execute on @tzarc's repo so as to not lock up QMK org's resources
+    if: github.repository == 'tzarc/qmk_toolchains'
+
     name: "Build crosstool-ng"
     runs-on: ${{ fromJSON(matrix.host_labels) }}
     strategy:

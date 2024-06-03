@@ -220,8 +220,9 @@ jobs:
           fi
           latest_state=$(dirname $(find $(find build -mindepth 4 -maxdepth 5 -type d -name state) -mindepth 2 -maxdepth 2 -type f -name env.sh -print0 | xargs -0r $STAT -c '%w|%n' | sort | cut -d'|' -f2 | tail -n1))
           source "$latest_state/env.sh"
+          ./strip-toolchain.sh toolchains/host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}
           tar cf qmk_toolchain-gcc${CT_GCC_VERSION}-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}.tar -C toolchains host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }} ${DEREF_SYMLINKS_ARGS:-}
-          xz -T 0 -z -7 qmk_toolchain-gcc${CT_GCC_VERSION}-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}.tar
+          xz -T 0 -z -9 -e qmk_toolchain-gcc${CT_GCC_VERSION}-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}.tar
 
       - name: Upload toolchain
         if: ${{ inputs.toolchain_tarball }}
