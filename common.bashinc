@@ -196,6 +196,8 @@ function build_one() {
     ct-ng $sample_name
     echo "CT_EXPERIMENTAL=y" >>.config
     echo "CT_FORCE_EXTRACT=y" >>.config
+    echo "CT_STRIP_HOST_TOOLCHAIN_EXECUTABLES=y" >>.config
+    echo "CT_STRIP_TARGET_TOOLCHAIN_EXECUTABLES=y" >>.config
 
     if [[ ! -z "${build_host_compile:-}" ]]; then
         ${SED} -i \

@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 
+set -eEuo pipefail
+
 this_script="$PWD/$(basename ${BASH_SOURCE[0]})"
 script_dir=$(dirname "${this_script}")
+source "${script_dir}/common.bashinc"
 
 if [[ -z "${1}" ]]; then
     echo "Usage: ${this_script} <path-to-toolchain-dir>"
@@ -15,16 +18,27 @@ if [[ ! -d "${toolchain_dir}" ]]; then
     exit 1
 fi
 
-# Work out the exec prefix
-toolchain_prefix=$(find "${toolchain_dir}/bin" -type f -name '*-gcc' -exec basename '{}' \; | head -n1 | sed -e 's@gcc$@@g')
+# Add the other compilers to the PATH for use
+while read bindir; do
+    export PATH="$bindir:$PATH"
+    echo "Adding $bindir to \$PATH"
+done < <(find "$script_dir/toolchains/host_$(fn_os_arch)"* -mindepth 1 -maxdepth 1 -type d -name bin)
+
+echo
+
+# Work out the toolchain prefix
+toolchain_prefix=$(find "${toolchain_dir}/bin" -type f -name '*-gcc*' -exec basename '{}' \; 2>/dev/null | head -n1 | sed -e 's@gcc.*$@@g')
+
+echo "Toolchain prefix: ${toolchain_prefix}"
+echo
 
 # Strip binaries
 find "${toolchain_dir}" -type f \
     -name '*.o' -or -name '*.a' \
-    -print \
+    -printf '%P\n' \
     -exec ${toolchain_prefix}strip --strip-debug '{}' \;
 
 find "${toolchain_dir}" -type f \
     -name '*.a' \
-    -print \
+    -printf '%P\n' \
     -exec ${toolchain_prefix}ranlib '{}' \;

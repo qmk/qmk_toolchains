@@ -96,7 +96,7 @@ jobs:
       - name: "Gather source tarballs"
         run: |
           # Clear out the tools prefix so we can run everything, even without a bootstrap compiler present
-          for f in $(ls *.sh); do ./$f --tools-prefix= source; done
+          for f in $(ls aarch64*.sh arm*.sh avr*.sh riscv32*.sh win64*.sh x64linux*.sh); do ./$f --tools-prefix= source; done
           tar cvf tarballs.tar tarballs
 
       - name: "Upload source tarballs"
@@ -231,9 +231,63 @@ jobs:
       target_host: linuxARM64
       build_script: aarch64linux-aarch64linux-canadian.sh
 
+  strip-and-repack-toolchains:
+    name: Strip and repack toolchains
+    needs: [bootstrap-linuxX64-toolchain, native-toolchains, canadian-toolchains, native-linuxX64-toolchain, canadian-windowsX64-toolchain, canadian-linuxARM64-toolchain]
+    if: always() && !cancelled()
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target_host: [baremetalARM, baremetalAVR, baremetalRV32]
+
+    steps:
+      - name: "Clone toolchains repo"
+        uses: actions/checkout@v4
+
+      - name: Download toolchains
+        if: always() && !cancelled()
+        uses: actions/download-artifact@v4
+        with:
+          pattern: toolchain-*-target_${{ matrix.target_host }}
+          path: .
+          merge-multiple: true
+
+      - name: Unpack toolchains
+        run: |
+          mkdir toolchains
+          for file in $(ls qmk_toolchain*.tar.xz); do
+            echo "Extracting $file"
+            tar xf $file -C toolchains
+          done
+
+      - name: Strip toolchains
+        run: |
+          for dir in $(ls -d toolchains/*${{ matrix.target_host }}); do
+            echo "Stripping toolchain in $dir"
+            ./strip-toolchain.sh $dir
+          done
+
+      - name: Repack toolchains
+        run: |
+          for dir in $(ls -d toolchains/*${{ matrix.target_host }}); do
+            output_filename=$(ls qmk_toolchain*.tar.xz | grep $(basename $dir))
+            echo "Repacking toolchain in $dir => $output_filename"
+            [[ ! -f $output_filename ]] || rm -f $output_filename
+            tar cf $(basename ${output_filename} .xz) -C toolchains $(basename $dir)
+            xz -T 0 -z -9 -e $(basename ${output_filename} .xz)
+          done
+
+      - name: Upload toolchain
+        uses: actions/upload-artifact@v4
+        with:
+          name: stripped-toolchains-target_${{ matrix.target_host }}
+          path: |
+            qmk_toolchain-gcc*.tar.xz
+
   publish:
     name: Publish toolchains
-    needs: [bootstrap-linuxX64-toolchain, native-toolchains, canadian-toolchains, native-linuxX64-toolchain, canadian-windowsX64-toolchain, canadian-linuxARM64-toolchain]
+    needs: [strip-and-repack-toolchains]
     if: always() && !cancelled()
     runs-on: ubuntu-latest
 
@@ -242,7 +296,7 @@ jobs:
         if: always() && !cancelled()
         uses: actions/download-artifact@v4
         with:
-          pattern: toolchain-*
+          pattern: stripped-toolchains-*
           path: .
           merge-multiple: true
 
