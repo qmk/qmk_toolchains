@@ -368,7 +368,7 @@ function build_one() {
     echo "CT_DEBUG_CT_SAVE_STEPS=y" >>.config
     echo "CT_DEBUG_CT_SAVE_STEPS_GZIP=y" >>.config
     ct-ng olddefconfig
-    echo "CT_TOOLCHAIN_PKGVERSION=\"qmk_toolchain-\${CT_GCC_VERSION}\"" >>.config
+    echo "CT_TOOLCHAIN_PKGVERSION=\"qmk/qmk_toolchains @ $(git rev-parse --short HEAD)\"" >>.config
     ct-ng olddefconfig
 
     if [[ ! -z "${tools_prefix:-}" ]]; then
