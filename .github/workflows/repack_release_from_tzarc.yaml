@@ -1,0 +1,72 @@
+---
+name: Repack release from tzarc/qmk_toolchains
+
+on:
+  workflow_dispatch:
+    inputs:
+      tzarc_release_tag:
+        description: "Tag of the tzarc/qmk_toolchains release to repack"
+        required: true
+        default: "latest"
+      qmk_release_tag:
+        description: "Tag of the QMK release to publish as"
+        required: true
+        default: "latest"
+
+jobs:
+  repack_artifacts:
+    name: Repack and release toolchains
+    if: github.repository == 'qmk/qmk_toolchains'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq curl
+
+      - name: Download and repack tzarc/qmk_toolchains release
+        run: |
+          curl -fsSL https://api.github.com/repos/tzarc/qmk_toolchains/releases/tags/${{ inputs.tzarc_release_tag }} > release.json
+          jq -r '.assets[] | select(.name | contains("qmk_toolchain")) | .browser_download_url' release.json > toolchain_urls.txt
+          for arch in linuxARM64 linuxX64 macosARM64 macosX64 windowsX64; do
+              for url in $(grep $arch toolchain_urls.txt); do
+                  echo Downloading ${url}...
+                  curl -fsSLO $url
+              done
+
+              mkdir qmk_toolchains_${arch}
+              for file in $(ls qmk_toolchain*host_${arch}*.tar.xz); do
+                  echo Extracting ${file}...
+                  tar xf $file -C qmk_toolchains_${arch} --strip-components=1
+              done
+
+              echo Performing cleanup...
+              rm -rf qmk_toolchains_${arch}/build.log.bz2 qmk_toolchains_${arch}/share/doc/avr-libc*/examples
+
+              echo Determining version of gcc...
+              eval "$(./qmk_toolchains_${arch}/bin/avr-ct-ng.config | grep -E '^CT_GCC_VERSION=')"
+              echo Found version ${CT_GCC_VERSION}.
+
+              echo Packaging qmk_toolchains-gcc${CT_GCC_VERSION}-host_${arch}.tar...
+              tar cf qmk_toolchains-gcc${CT_GCC_VERSION}-host_${arch}.tar qmk_toolchains_${arch}
+
+              echo Compressing qmk_toolchains-gcc${CT_GCC_VERSION}-host_${arch}.tar.xz...
+              xz -T 0 -z -9 -e qmk_toolchains-gcc${CT_GCC_VERSION}-host_${arch}.tar
+
+              echo Showing file metadata of qmk_toolchains-gcc${CT_GCC_VERSION}-host_${arch}.tar.xz...
+              ls -1al qmk_toolchains-gcc${CT_GCC_VERSION}-host_${arch}.tar.xz
+
+              echo Cleaning up...
+              rm -rf qmk_toolchains_${arch} qmk_toolchain-*
+          done
+
+      - name: Generate pre-release
+        uses: marvinpinto/action-automatic-releases@latest
+        if: always() && !cancelled()
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: ${{ inputs.qmk_release_tag }}
+          prerelease: true
+          title: ${{ inputs.qmk_release_tag }}
+          files: |
+            qmk_toolchains-*

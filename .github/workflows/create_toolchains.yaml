@@ -232,9 +232,11 @@ jobs:
       build_script: aarch64linux-aarch64linux-canadian.sh
 
   strip-and-repack-toolchains:
+    # only actually execute on @tzarc's repo so as to not lock up QMK org's resources
+    if: always() && !cancelled() && github.repository == 'tzarc/qmk_toolchains'
+
     name: Strip and repack toolchains
     needs: [bootstrap-linuxX64-toolchain, native-toolchains, canadian-toolchains, native-linuxX64-toolchain, canadian-windowsX64-toolchain, canadian-linuxARM64-toolchain]
-    if: always() && !cancelled()
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -286,9 +288,11 @@ jobs:
             qmk_toolchain-gcc*.tar.xz
 
   publish:
+    # only actually execute on @tzarc's repo so as to not lock up QMK org's resources
+    if: always() && !cancelled() && github.repository == 'tzarc/qmk_toolchains'
+
     name: Publish toolchains
     needs: [strip-and-repack-toolchains]
-    if: always() && !cancelled()
     runs-on: ubuntu-latest
 
     steps:
