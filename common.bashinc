@@ -198,6 +198,9 @@ function build_one() {
     echo "CT_FORCE_EXTRACT=y" >>.config
     echo "CT_STRIP_HOST_TOOLCHAIN_EXECUTABLES=y" >>.config
     echo "CT_STRIP_TARGET_TOOLCHAIN_EXECUTABLES=y" >>.config
+    echo "CT_COMP_TOOLS_FOR_HOST=y" >>.config
+    echo "CT_COMP_TOOLS_MAKE=y" >>.config
+    echo "CT_MAKE_GMAKE_SYMLINK=y" >>.config
 
     if [[ ! -z "${build_host_compile:-}" ]]; then
         ${SED} -i \
@@ -226,10 +229,12 @@ function build_one() {
         -e '/CT_LOG_PROGRESS_BAR/s/y$/n/' \
         -e 's/^.*CT_PREFIX_DIR_RO.*$/CT_PREFIX_DIR_RO=n/' \
         -e 's/^.*CT_CC_LANG_CXX.*$/CT_CC_LANG_CXX=y/' \
-        -e 's/^.*CT_CC_GCC_LTO_ZSTD.*$/CT_CC_GCC_LTO_ZSTD=y/' \
+        -e 's/^.*CT_CC_GCC_LTO_ZSTD.*$/CT_CC_GCC_LTO_ZSTD=n/' \
         -e 's/^.*CT_DEBUG_GDB.*$/CT_DEBUG_GDB=y/' \
         -e 's@^.*CT_LOCAL_TARBALLS_DIR.*$@CT_LOCAL_TARBALLS_DIR="'"$script_dir/tarballs"'"@' \
         .config
+
+    # NOTE: For some reason zstd won't link despite being built. No idea what's going on.
 
     # Swap to an older version of Linux to avoid issues with older distros, especially things like older Debian with Raspberry Pi targets.
     ${SED} -i \
