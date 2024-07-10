@@ -33,6 +33,10 @@ jobs:
           ref: master
           fetch-depth: 0
 
+      - name: "Ensure correct crosstool-ng revision used"
+        run: |
+          git switch -c qmk_toolchains-build 47e6217
+
       - name: "Host info"
         run: |
           uname -a
