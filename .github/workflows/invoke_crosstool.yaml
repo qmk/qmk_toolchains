@@ -174,8 +174,8 @@ jobs:
             # Prefer to target Monterey
             export MACOSX_DEPLOYMENT_TARGET=12.0
           fi
-          # Kick off the requested build phase
-          ./${{ inputs.build_script }} ${{ inputs.crosstool_args }}
+          # Kick off the requested build phase (kill after 5h45m so logs can be gathered)
+          timeout 20700 ./${{ inputs.build_script }} ${{ inputs.crosstool_args }}
 
       - name: Upload build logs
         uses: actions/upload-artifact@v4
