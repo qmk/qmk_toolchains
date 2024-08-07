@@ -19,7 +19,7 @@ jobs:
         runner: [linuxX64, macosX64, macosARM64]
         include:
           - runner: linuxX64
-            host_labels: '["ubuntu-22.04"]'
+            host_labels: '["ubuntu-latest"]'
           - runner: macosX64
             host_labels: '["macos-12"]'
           - runner: macosARM64
@@ -72,7 +72,7 @@ jobs:
   tarballs:
     name: "Download required tarballs"
     needs: [crosstool]
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     steps:
       - name: "Clone toolchains repo"
@@ -111,7 +111,7 @@ jobs:
     needs: [tarballs]
     uses: ./.github/workflows/create_one_toolchain.yaml
     with:
-      runner_labels_json: '["ubuntu-22.04"]'
+      runner_labels_json: '["ubuntu-latest"]'
       crosstool_host_os: linuxX64
       build_host: linuxX64
       target_host: linuxX64
@@ -133,7 +133,7 @@ jobs:
             build_script: win64-native.sh
     uses: ./.github/workflows/create_one_toolchain.yaml
     with:
-      runner_labels_json: '["ubuntu-22.04"]'
+      runner_labels_json: '["ubuntu-latest"]'
       crosstool_host_os: linuxX64
       build_host: linuxX64
       target_host: ${{ matrix.target_host }}
@@ -149,7 +149,7 @@ jobs:
         target_host: [baremetalARM, baremetalAVR, baremetalRV32]
         include:
           - build_host: linuxX64
-            runner_labels_json: '["ubuntu-22.04"]'
+            runner_labels_json: '["ubuntu-latest"]'
           - build_host: macosX64
             runner_labels_json: '["macos-12"]'
           - build_host: macosARM64
@@ -189,7 +189,7 @@ jobs:
             script_prefix: riscv32
     uses: ./.github/workflows/create_one_toolchain.yaml
     with:
-      runner_labels_json: '["ubuntu-22.04"]'
+      runner_labels_json: '["ubuntu-latest"]'
       crosstool_host_os: linuxX64
       canadian_build: true
       build_host: ${{ matrix.build_host }}
@@ -201,7 +201,7 @@ jobs:
     needs: [bootstrap-linuxX64-toolchain]
     uses: ./.github/workflows/create_one_toolchain.yaml
     with:
-      runner_labels_json: '["ubuntu-22.04"]'
+      runner_labels_json: '["ubuntu-latest"]'
       crosstool_host_os: linuxX64
       build_host: linuxX64
       target_host: linuxX64
@@ -212,7 +212,7 @@ jobs:
     needs: [canadian-toolchains]
     uses: ./.github/workflows/create_one_toolchain.yaml
     with:
-      runner_labels_json: '["ubuntu-22.04"]'
+      runner_labels_json: '["ubuntu-latest"]'
       crosstool_host_os: linuxX64
       canadian_build: true
       build_host: windowsX64
@@ -224,7 +224,7 @@ jobs:
     needs: [canadian-toolchains]
     uses: ./.github/workflows/create_one_toolchain.yaml
     with:
-      runner_labels_json: '["ubuntu-22.04"]'
+      runner_labels_json: '["ubuntu-latest"]'
       crosstool_host_os: linuxX64
       canadian_build: true
       build_host: linuxARM64
