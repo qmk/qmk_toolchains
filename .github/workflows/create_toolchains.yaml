@@ -58,10 +58,10 @@ jobs:
             export LDFLAGS="$LDFLAGS -L/opt/homebrew/opt/ncurses/lib -L/opt/homebrew/opt/gettext/lib"
           fi
           ./bootstrap
-          ./configure --prefix=$PWD/.local/
+          ./configure --prefix=$HOME/.local/crosstool-ng
           make
           make install
-          tar cf ct-ng.tar .local/
+          tar cf ct-ng.tar -C $HOME .local/
 
       - name: "Upload crosstool-ng"
         uses: actions/upload-artifact@v4
@@ -85,13 +85,13 @@ jobs:
 
       - name: "Extract copy of crosstool-ng"
         run: |
-          tar xf ct-ng.tar
+          tar xf ct-ng.tar -C $HOME
 
       - name: "Prerequisites (Linux)"
         if: ${{ runner.os == 'Linux' }}
         run: |
           sudo apt-get install -y gperf help2man libtool-bin
-          echo "$GITHUB_WORKSPACE/.local/bin" >> $GITHUB_PATH
+          echo "$HOME/.local/crosstool-ng/bin" >> $GITHUB_PATH
 
       - name: "Gather source tarballs"
         run: |

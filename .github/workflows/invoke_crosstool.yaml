@@ -31,13 +31,13 @@ jobs:
         if: ${{ runner.os == 'Linux' }}
         run: |
           ./ubuntu-prereqs.sh
-          echo "$GITHUB_WORKSPACE/.local/bin" >> $GITHUB_PATH
+          echo "$HOME/.local/crosstool-ng/bin" >> $GITHUB_PATH
 
       - name: Prerequisites (macOS)
         if: ${{ runner.os == 'macOS' }}
         run: |
           brew install autoconf automake bash binutils coreutils gawk gnu-sed help2man make meson ncurses pkg-config python3
-          echo "$GITHUB_WORKSPACE/.local/bin" >> $GITHUB_PATH
+          echo "$HOME/.local/crosstool-ng/bin" >> $GITHUB_PATH
 
       - name: Show disk space available - before
         run: |
@@ -61,6 +61,7 @@ jobs:
           sudo mkdir /t
           sudo mount --bind $GITHUB_WORKSPACE /t
           echo "TC_WORKDIR=/t" >> $GITHUB_ENV
+          echo "EXECUTE_UNDER_DOCKER=1" >> $GITHUB_ENV
 
       - name: Setup workdir everywhere else
         if: ${{ runner.os != 'Linux' }}
@@ -109,7 +110,7 @@ jobs:
 
       - name: Extract copy of crosstool-ng
         run: |
-          tar xf ct-ng.tar
+          tar xf ct-ng.tar -C $HOME
 
       - name: Download source tarballs
         uses: actions/download-artifact@v4

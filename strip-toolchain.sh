@@ -4,6 +4,7 @@ set -eEuo pipefail
 
 this_script="$PWD/$(basename ${BASH_SOURCE[0]})"
 script_dir=$(dirname "${this_script}")
+cd "$script_dir"
 source "${script_dir}/common.bashinc"
 
 if [[ -z "${1}" ]]; then

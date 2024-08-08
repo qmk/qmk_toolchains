@@ -2,6 +2,21 @@
 # Copyright 2024 Nick Brassel (@tzarc)
 # SPDX-License-Identifier: GPL-2.0-or-later
 
+# If necessary, re-exec with a clean environment inside docker
+if [[ "$(uname -s)" == "Linux" ]]; then
+    if [[ -n "$EXECUTE_UNDER_DOCKER" ]]; then
+        docker run --rm \
+            -v "$HOME/.local/crosstool-ng:$HOME/.local/crosstool-ng" \
+            -v "$script_dir:$TC_WORKDIR" \
+            -w "$TC_WORKDIR" \
+            ubuntu:jammy \
+            bash -xc "./ubuntu-prereqs.sh && groupadd -g $(id -g) $USER && useradd -g $(id -g) -u $(id -u) -M -N $USER && su -g $USER -c \"cd $TC_WORKDIR && ./$(basename $this_script)\" - $USER $@"
+        exit $?
+    fi
+fi
+
+export PATH="$HOME/.local/crosstool-ng/bin:$PATH"
+
 function havecmd() {
     type "${1}" >/dev/null 2>&1 || return 1
 }

@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
-sudo apt-get update
-sudo apt-get dist-upgrade -y
-sudo apt-get install -y build-essential gperf help2man libtool-bin meson flex bison texinfo gawk libncurses-dev patchelf
+unset SUDO
+if [[ $EUID != 0 ]]; then
+    SUDO=sudo
+fi
+
+DEBIAN_FRONTEND=noninteractive $SUDO apt-get update
+DEBIAN_FRONTEND=noninteractive $SUDO apt-get install -y build-essential git wget curl gperf help2man libtool-bin meson flex bison texinfo gawk libncurses-dev patchelf
