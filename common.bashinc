@@ -419,6 +419,9 @@ function build_one() {
     if [[ ${#positional_args[@]} -eq 1 ]] && [[ "${positional_args[0]}" == "source" ]]; then
         ct-ng source || true
     else
+        $script_dir/build-stats.sh &
+        STATS_PID=$!
         ct-ng ${positional_args[@]}
+        kill $STATS_PID
     fi
 }
