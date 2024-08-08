@@ -229,7 +229,10 @@ function build_one() {
         -e '/CT_LOG_PROGRESS_BAR/s/y$/n/' \
         -e 's/^.*CT_PREFIX_DIR_RO.*$/CT_PREFIX_DIR_RO=n/' \
         -e 's/^.*CT_CC_LANG_CXX.*$/CT_CC_LANG_CXX=y/' \
-        -e 's/^.*CT_CC_GCC_LTO_ZSTD.*$/CT_CC_GCC_LTO_ZSTD=y/' \
+        -e 's/^.*CT_CC_GCC_LTO_ZSTD.*$/CT_CC_GCC_LTO_ZSTD=n/' \
+        -e 's/^.*CT_COMP_LIBS_ZSTD.*$/CT_COMP_LIBS_ZSTD=n/' \
+        -e 's/^.*CT_ZSTD_NEEDED.*$/CT_ZSTD_NEEDED=n/' \
+        -e 's/^.*CT_ZSTD.*$/CT_ZSTD=n/' \
         -e 's/^.*CT_DEBUG_GDB.*$/CT_DEBUG_GDB=y/' \
         -e 's@^.*CT_LOCAL_TARBALLS_DIR.*$@CT_LOCAL_TARBALLS_DIR="'"$script_dir/tarballs"'"@' \
         .config
