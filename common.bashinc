@@ -213,9 +213,9 @@ function build_one() {
     echo "CT_FORCE_EXTRACT=y" >>.config
     echo "CT_STRIP_HOST_TOOLCHAIN_EXECUTABLES=y" >>.config
     echo "CT_STRIP_TARGET_TOOLCHAIN_EXECUTABLES=y" >>.config
-    echo "CT_COMP_TOOLS_FOR_HOST=y" >>.config
-    echo "CT_COMP_TOOLS_MAKE=y" >>.config
-    echo "CT_MAKE_GMAKE_SYMLINK=y" >>.config
+    #echo "CT_COMP_TOOLS_FOR_HOST=y" >>.config
+    #echo "CT_COMP_TOOLS_MAKE=y" >>.config
+    #echo "CT_MAKE_GMAKE_SYMLINK=y" >>.config
 
     if [[ ! -z "${build_host_compile:-}" ]]; then
         ${SED} -i \
