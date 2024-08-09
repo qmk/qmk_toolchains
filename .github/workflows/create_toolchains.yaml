@@ -244,6 +244,17 @@ jobs:
         target_host: [baremetalARM, baremetalAVR, baremetalRV32]
 
     steps:
+      - name: Maximize build space for Linux
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 2048
+          swap-size-mb: 8192
+          remove-dotnet: "true"
+          remove-android: "true"
+          remove-haskell: "true"
+          remove-codeql: "true"
+          remove-docker-images: "true"
+
       - name: "Clone toolchains repo"
         uses: actions/checkout@v4
 
