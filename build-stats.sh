@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 
 while true; do
-    echo -en "\e[0;37m"
+    sleep 300
+    echo
     ps xfwau
+    echo
     df -h
+    echo
     free -h
-    echo -en "\e[0m"
-    sleep 60
+    echo
 done

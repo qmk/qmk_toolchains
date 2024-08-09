@@ -10,6 +10,6 @@ git clone https://github.com/crosstool-ng/crosstool-ng.git "$HOME/crosstool-ng-i
 
 cd "$HOME/crosstool-ng-install"
 ./bootstrap
-./configure --prefix=/usr
+./configure --prefix=$HOME/.local/crosstool-ng
 make
-sudo make install
+make install

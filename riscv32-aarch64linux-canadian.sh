@@ -8,6 +8,7 @@ cd "$script_dir"
 source "${script_dir}/common.bashinc"
 
 build_one_help "$@"
+respawn_docker_if_needed "$@"
 
 build_one \
     --sample-name=riscv32-picolibc-elf \

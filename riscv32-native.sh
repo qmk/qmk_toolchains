@@ -8,6 +8,7 @@ cd "$script_dir"
 source "${script_dir}/common.bashinc"
 
 build_one_help "$@"
+respawn_docker_if_needed "$@"
 
 if [[ $(uname -s) == "Linux" ]]; then
     extra_args="--tools-prefix=x86_64-qmk_bootstrap-linux-gnu-"

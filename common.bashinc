@@ -3,17 +3,17 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 # If necessary, re-exec with a clean environment inside docker
-if [[ "$(uname -s)" == "Linux" ]]; then
-    if [[ -n "$EXECUTE_UNDER_DOCKER" ]]; then
+function respawn_docker_if_needed() {
+    if [[ "$(uname -s)" == "Linux" ]] && [[ -n "${EXECUTE_UNDER_DOCKER:-}" ]]; then
         docker run --rm \
             -v "$HOME/.local/crosstool-ng:$HOME/.local/crosstool-ng" \
             -v "$script_dir:$TC_WORKDIR" \
             -w "$TC_WORKDIR" \
             ubuntu:jammy \
-            bash -xc "./ubuntu-prereqs.sh && groupadd -g $(id -g) $USER && useradd -g $(id -g) -u $(id -u) -M -N $USER && su -g $USER -c \"cd $TC_WORKDIR && ./$(basename $this_script)\" - $USER $@"
+            bash -xc "./ubuntu-prereqs.sh && groupadd -g $(id -g) $USER && useradd -g $(id -g) -u $(id -u) -M -N $USER && su -g $USER -c \"cd $TC_WORKDIR && ./$(basename $this_script) $*\" - $USER"
         exit $?
     fi
-fi
+}
 
 export PATH="$HOME/.local/crosstool-ng/bin:$PATH"
 
@@ -213,9 +213,6 @@ function build_one() {
     echo "CT_FORCE_EXTRACT=y" >>.config
     echo "CT_STRIP_HOST_TOOLCHAIN_EXECUTABLES=y" >>.config
     echo "CT_STRIP_TARGET_TOOLCHAIN_EXECUTABLES=y" >>.config
-    #echo "CT_COMP_TOOLS_FOR_HOST=y" >>.config
-    #echo "CT_COMP_TOOLS_MAKE=y" >>.config
-    #echo "CT_MAKE_GMAKE_SYMLINK=y" >>.config
 
     if [[ ! -z "${build_host_compile:-}" ]]; then
         ${SED} -i \
