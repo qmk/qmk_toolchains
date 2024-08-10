@@ -70,6 +70,9 @@ jobs:
           path: ct-ng.tar
 
   tarballs:
+    # only actually execute on @tzarc's repo so as to not lock up QMK org's resources
+    if: always() && !cancelled() && github.repository == 'tzarc/qmk_toolchains'
+
     name: "Download required tarballs"
     needs: [crosstool]
     runs-on: ubuntu-latest
@@ -107,6 +110,9 @@ jobs:
 
   # Build a copy of linux/X64 toolchain to bootstrap the rest so that the resulting compilers are compatible with the old glibc.
   bootstrap-linuxX64-toolchain:
+    # only actually execute on @tzarc's repo so as to not lock up QMK org's resources
+    if: always() && !cancelled() && github.repository == 'tzarc/qmk_toolchains'
+
     name: "Build bootstrap linuxX64 toolchain"
     needs: [tarballs]
     uses: ./.github/workflows/create_one_toolchain.yaml
@@ -120,6 +126,9 @@ jobs:
       toolchain_suffix: "_qmk_bootstrap"
 
   canadian-host-toolchains:
+    # only actually execute on @tzarc's repo so as to not lock up QMK org's resources
+    if: always() && !cancelled() && github.repository == 'tzarc/qmk_toolchains'
+
     name: "Build canadian host toolchains"
     needs: [bootstrap-linuxX64-toolchain]
     strategy:
@@ -140,6 +149,9 @@ jobs:
       build_script: ${{ matrix.build_script }}
 
   native-toolchains:
+    # only actually execute on @tzarc's repo so as to not lock up QMK org's resources
+    if: always() && !cancelled() && github.repository == 'tzarc/qmk_toolchains'
+
     name: "Build native toolchains"
     needs: [bootstrap-linuxX64-toolchain]
     strategy:
@@ -169,6 +181,9 @@ jobs:
       build_script: ${{ matrix.build_script }}
 
   canadian-toolchains:
+    # only actually execute on @tzarc's repo so as to not lock up QMK org's resources
+    if: always() && !cancelled() && github.repository == 'tzarc/qmk_toolchains'
+
     name: "Build canadian toolchains"
     needs: [canadian-host-toolchains]
     strategy:
@@ -197,6 +212,9 @@ jobs:
       build_script: ${{ matrix.script_prefix }}${{ matrix.script_suffix }}
 
   native-linuxX64-toolchain:
+    # only actually execute on @tzarc's repo so as to not lock up QMK org's resources
+    if: always() && !cancelled() && github.repository == 'tzarc/qmk_toolchains'
+
     name: "Build native linuxX64 toolchain"
     needs: [bootstrap-linuxX64-toolchain]
     uses: ./.github/workflows/create_one_toolchain.yaml
@@ -208,6 +226,9 @@ jobs:
       build_script: x64linux-native.sh
 
   canadian-windowsX64-toolchain:
+    # only actually execute on @tzarc's repo so as to not lock up QMK org's resources
+    if: always() && !cancelled() && github.repository == 'tzarc/qmk_toolchains'
+
     name: "Build native windowsX64 toolchain"
     needs: [canadian-toolchains]
     uses: ./.github/workflows/create_one_toolchain.yaml
@@ -220,6 +241,9 @@ jobs:
       build_script: win64-win64-canadian.sh
 
   canadian-linuxARM64-toolchain:
+    # only actually execute on @tzarc's repo so as to not lock up QMK org's resources
+    if: always() && !cancelled() && github.repository == 'tzarc/qmk_toolchains'
+
     name: "Build native linuxARM64 toolchain"
     needs: [canadian-toolchains]
     uses: ./.github/workflows/create_one_toolchain.yaml
@@ -307,6 +331,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Clone toolchains repo
+        if: always() && !cancelled()
+        uses: actions/checkout@v4
+
+      - name: Delete tag
+        if: always() && !cancelled()
+        run: gh release delete latest --cleanup-tag || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Download toolchains
         if: always() && !cancelled()
         uses: actions/download-artifact@v4
@@ -315,22 +349,14 @@ jobs:
           path: .
           merge-multiple: true
 
-      - name: Generate pre-release... release
-        uses: marvinpinto/action-automatic-releases@latest
-        if: always() && !cancelled() && github.ref == 'refs/heads/main'
-        with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: latest
-          prerelease: true
-          title: Development Build
-          files: |
-            qmk_toolchain*
+      - name: Dump list
+        run: |
+          ls -1al *.tar.xz
 
-      - name: Generate release
-        uses: marvinpinto/action-automatic-releases@latest
-        if: always() && !cancelled() && startsWith(github.ref, 'refs/tags/v')
+      - name: Create Release
+        if: always() && !cancelled()
+        uses: softprops/action-gh-release@v2
         with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          prerelease: false
           files: |
             qmk_toolchain*
+          tag_name: latest

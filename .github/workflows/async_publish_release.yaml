@@ -1,5 +1,5 @@
 ---
-name: Test Publishing
+name: Async Release Publish
 
 on:
   workflow_dispatch:
@@ -45,8 +45,7 @@ jobs:
       - name: Dump list
         run: |
           mv */*.tar.xz .
-          rmdir stripped-toolchains*
-          ls -1al
+          ls -1al *.tar.xz
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
