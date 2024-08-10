@@ -177,6 +177,7 @@ jobs:
           fi
           # Kick off the requested build phase (kill after 5h45m so logs can be gathered)
           timeout 19800 ./${{ inputs.build_script }} ${{ inputs.crosstool_args }}
+          find . \( -name \*.log \) -print0 | xargs -0 tar cvf build_logs.tar
 
       - name: Upload build logs
         uses: actions/upload-artifact@v4
@@ -184,7 +185,7 @@ jobs:
         with:
           name: build.log-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}-phase${{ inputs.phase_number }}
           path: |
-            **/*.log
+            build_logs.tar
 
       - name: Make build state
         if: ${{ inputs.save_state }}
