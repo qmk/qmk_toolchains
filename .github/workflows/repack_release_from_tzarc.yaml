@@ -13,12 +13,23 @@ on:
         required: true
         default: "latest"
 
+permissions:
+  contents: write
+
 jobs:
   repack_artifacts:
     name: Repack and release toolchains
     if: github.repository == 'qmk/qmk_toolchains'
     runs-on: ubuntu-latest
     steps:
+      - name: Clone toolchains repo
+        uses: actions/checkout@v4
+
+      - name: Delete tag
+        run: gh release delete ${{ inputs.qmk_release_tag }} --cleanup-tag || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Prerequisites
         run: |
           sudo apt-get update
@@ -60,13 +71,13 @@ jobs:
               rm -rf qmk_toolchains_${arch} qmk_toolchain-*
           done
 
-      - name: Generate pre-release
-        uses: marvinpinto/action-automatic-releases@latest
-        if: always() && !cancelled()
+      - name: Dump list
+        run: |
+          ls -1al *.tar.xz
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
         with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: ${{ inputs.qmk_release_tag }}
-          prerelease: true
-          title: ${{ inputs.qmk_release_tag }}
           files: |
-            qmk_toolchains-*
+            qmk_toolchain*
+          tag_name: ${{ inputs.qmk_release_tag }}
