@@ -55,7 +55,7 @@ jobs:
               rm -rf qmk_toolchains_${arch}/build.log.bz2 qmk_toolchains_${arch}/share/doc/avr-libc*/examples
 
               echo Determining version of gcc...
-              eval "$(./qmk_toolchains_${arch}/bin/avr-ct-ng.config | grep -E '^CT_GCC_VERSION=')"
+              eval "$(bzcat qmk_toolchains_${arch}/share/*.config.bz2 | grep -E '^CT_GCC_VERSION=')"
               echo Found version ${CT_GCC_VERSION}.
 
               echo Packaging qmk_toolchains-gcc${CT_GCC_VERSION}-host_${arch}.tar...
