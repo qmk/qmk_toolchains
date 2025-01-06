@@ -19,7 +19,7 @@ if [[ ! -d "${toolchain_dir}" ]]; then
     exit 1
 fi
 
-# Add the other compilers to the PATH for use
+# Add the other compilers to the PATH for use, limiting to the currently-executing OS and architecture
 while read bindir; do
     export PATH="$bindir:$PATH"
     echo "Adding $bindir to \$PATH"

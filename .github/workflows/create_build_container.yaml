@@ -1,0 +1,169 @@
+---
+name: 1. (tzarc) Create Build Container
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "4 3 */6 * *" # every 6 days to keep cache
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  TC_WORKDIR: "/t"
+  EXECUTE_UNDER_DOCKER: true
+  CROSSTOOL_REPO_REF: 7458341776f14d4d12e6d6fe51382e87e832894f
+
+jobs:
+  base_container:
+    # only actually execute on @tzarc's repo so as to not lock up QMK org's resources
+    if: github.repository == 'tzarc/qmk_toolchains'
+
+    name: Create `base` container
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Move docker data root to /mnt for more space
+        run: |
+          set -x
+          DOCKER_DATA_ROOT='/mnt/var/lib/docker'
+          DOCKER_DAEMON_JSON='/etc/docker/daemon.json'
+          sudo mkdir -p "${DOCKER_DATA_ROOT}"
+          echo "{\"data-root\": \"${DOCKER_DATA_ROOT}\"}" | sudo tee "${DOCKER_DAEMON_JSON}"
+          sudo systemctl restart docker
+          sudo df -h
+
+      - name: Clone toolchains repo
+        uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Push to GHCR
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.base
+          build-args: |
+            CROSSTOOL_REPO_REF=${{ env.CROSSTOOL_REPO_REF }}
+          push: true
+          platforms: linux/amd64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: |
+            ghcr.io/tzarc/qmk_toolchains:base
+
+  tarballs:
+    if: always() && !cancelled()
+    name: Download required tarballs
+    needs: [base_container]
+    uses: ./.github/workflows/download_tarballs.yaml
+    with:
+      state_name: create_build_container
+      container_name: ghcr.io/tzarc/qmk_toolchains:base
+
+  # Build a copy of linux/X64 toolchain to bootstrap the rest so that the resulting compilers are compatible with the old glibc.
+  bootstrap-linuxX64-toolchain:
+    if: always() && !cancelled()
+    name: Build bootstrap linuxX64 toolchain
+    needs: [tarballs]
+    uses: ./.github/workflows/create_one_toolchain.yaml
+    with:
+      crosstool_host_os: linuxX64
+      build_host: linuxX64
+      target_host: linuxX64
+      build_script: x64linux-native-bootstrap.sh
+      fetch_bootstrap: false
+      toolchain_suffix: "_qmk_bootstrap"
+
+  # Build base toolchains for the other platforms
+  base-toolchains:
+    if: always() && !cancelled()
+    name: Build base toolchains
+    needs: [bootstrap-linuxX64-toolchain]
+    strategy:
+      fail-fast: false
+      matrix:
+        target_host: [linuxX64, linuxARM64, linuxRV64, windowsX64]
+        include:
+          - target_host: linuxX64
+            build_script: x64linux-native.sh
+          - target_host: linuxARM64
+            build_script: aarch64linux-native.sh
+          - target_host: linuxRV64
+            build_script: riscv64linux-native.sh
+          - target_host: windowsX64
+            build_script: win64-native.sh
+    uses: ./.github/workflows/create_one_toolchain.yaml
+    with:
+      crosstool_host_os: linuxX64
+      build_host: linuxX64
+      target_host: ${{ matrix.target_host }}
+      build_script: ${{ matrix.build_script }}
+
+  # Overall builder container
+  builder-container:
+    if: always() && !cancelled()
+    name: Create `builder` container
+    needs: [base-toolchains]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone toolchains repo
+        uses: actions/checkout@v4
+
+      - name: Download X64 toolchain
+        uses: actions/download-artifact@v4
+        with:
+          name: toolchain-host_linuxX64-target_linuxX64
+
+      - name: Download ARM64 toolchain
+        uses: actions/download-artifact@v4
+        with:
+          name: toolchain-host_linuxX64-target_linuxARM64
+
+      - name: Download RV64 toolchain
+        uses: actions/download-artifact@v4
+        with:
+          name: toolchain-host_linuxX64-target_linuxRV64
+
+      - name: Download Win64 toolchain
+        uses: actions/download-artifact@v4
+        with:
+          name: toolchain-host_linuxX64-target_windowsX64
+
+      - name: List directory
+        run: |
+          set -x
+          ls -l
+
+      - name: Login to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Push to GHCR
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.builder
+          push: true
+          platforms: linux/amd64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: |
+            ghcr.io/tzarc/qmk_toolchains:builder

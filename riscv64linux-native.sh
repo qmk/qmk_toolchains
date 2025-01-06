@@ -8,16 +8,15 @@ cd "$script_dir"
 source "${script_dir}/common.bashinc"
 
 build_one_help "$@"
-respawn_docker_if_needed "$@"
+respawn_docker_if_needed --container-image=ghcr.io/tzarc/qmk_toolchains:base "$@"
 
 if [[ $(uname -s) == "Linux" ]]; then
-    extra_args="--tools-prefix=x86_64-qmk-linux-gnu-"
+    extra_args="--tools-prefix=x86_64-qmk_bootstrap-linux-gnu-"
 fi
 
 build_one \
-    --sample-name=riscv32-picolibc-elf \
+    --sample-name=riscv64-unknown-linux-gnu \
     --vendor-name=unknown \
-    --binutils-plugins \
     --no-cross-gdb-python \
     ${extra_args:-} \
     "$@"

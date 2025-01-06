@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2024 Nick Brassel (@tzarc)
+# Copyright 2024-2025 Nick Brassel (@tzarc)
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 this_script="$PWD/$(basename ${BASH_SOURCE[0]})"
@@ -11,7 +11,7 @@ build_one_help "$@"
 respawn_docker_if_needed "$@"
 
 if [[ $(uname -s) == "Linux" ]]; then
-    extra_args="--tools-prefix=x86_64-qmk_bootstrap-linux-gnu-"
+    extra_args="--tools-prefix=x86_64-qmk-linux-gnu-"
 fi
 
 build_one \

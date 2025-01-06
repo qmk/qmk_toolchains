@@ -1,5 +1,5 @@
 ---
-name: Repack release from tzarc/qmk_toolchains
+name: 3. (qmk) Repack release from tzarc/qmk_toolchains
 
 on:
   workflow_dispatch:
@@ -39,16 +39,16 @@ jobs:
         run: |
           curl -fsSL https://api.github.com/repos/tzarc/qmk_toolchains/releases/tags/${{ inputs.tzarc_release_tag }} > release.json
           jq -r '.assets[] | select(.name | contains("qmk_toolchain")) | .browser_download_url' release.json > toolchain_urls.txt
-          for arch in linuxARM64 linuxX64 macosARM64 macosX64 windowsX64; do
+          for arch in linuxARM64 linuxX64 linuxRV64 macosARM64 macosX64 windowsX64; do
               for url in $(grep $arch toolchain_urls.txt); do
                   echo Downloading ${url}...
                   curl -fsSLO $url
               done
 
               mkdir qmk_toolchains_${arch}
-              for file in $(ls qmk_toolchain*host_${arch}*.tar.xz); do
+              for file in $(ls qmk_toolchain*host_${arch}*.tar.zst); do
                   echo Extracting ${file}...
-                  tar xf $file -C qmk_toolchains_${arch} --strip-components=1
+                  tar axf $file -C qmk_toolchains_${arch} --strip-components=1
               done
 
               echo Performing cleanup...
@@ -58,14 +58,11 @@ jobs:
               eval "$(bzcat qmk_toolchains_${arch}/share/*.config.bz2 | grep -E '^CT_GCC_VERSION=')"
               echo Found version ${CT_GCC_VERSION}.
 
-              echo Packaging qmk_toolchains-gcc${CT_GCC_VERSION}-host_${arch}.tar...
-              tar cf qmk_toolchains-gcc${CT_GCC_VERSION}-host_${arch}.tar qmk_toolchains_${arch}
+              echo Packaging qmk_toolchains-gcc${CT_GCC_VERSION}-host_${arch}.tar.zst...
+              tar acf qmk_toolchains-gcc${CT_GCC_VERSION}-host_${arch}.tar.zst qmk_toolchains_${arch}
 
-              echo Compressing qmk_toolchains-gcc${CT_GCC_VERSION}-host_${arch}.tar.xz...
-              xz -T 0 -z -9 -e qmk_toolchains-gcc${CT_GCC_VERSION}-host_${arch}.tar
-
-              echo Showing file metadata of qmk_toolchains-gcc${CT_GCC_VERSION}-host_${arch}.tar.xz...
-              ls -1al qmk_toolchains-gcc${CT_GCC_VERSION}-host_${arch}.tar.xz
+              echo Showing file metadata of qmk_toolchains-gcc${CT_GCC_VERSION}-host_${arch}.tar.zst...
+              ls -1al qmk_toolchains-gcc${CT_GCC_VERSION}-host_${arch}.tar.zst
 
               echo Cleaning up...
               rm -rf qmk_toolchains_${arch} qmk_toolchain-*
@@ -73,7 +70,7 @@ jobs:
 
       - name: Dump list
         run: |
-          ls -1al *.tar.xz
+          ls -1al *.tar.zst
 
       - name: Create Release
         uses: softprops/action-gh-release@v2

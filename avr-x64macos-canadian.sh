@@ -10,14 +10,9 @@ source "${script_dir}/common.bashinc"
 build_one_help "$@"
 respawn_docker_if_needed "$@"
 
-if [[ $(uname -s) == "Linux" ]]; then
-    extra_args="--tools-prefix=x86_64-qmk-linux-gnu-"
-fi
-
 build_one \
-    --sample-name=riscv32-picolibc-elf \
-    --vendor-name=unknown \
+    --sample-name=avr \
+    --canadian-host=x86_64-apple-darwin24 \
     --binutils-plugins \
     --no-cross-gdb-python \
-    ${extra_args:-} \
     "$@"

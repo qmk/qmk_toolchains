@@ -1,7 +1,0 @@
-{
-	"name": "Ubuntu",
-	"image": "mcr.microsoft.com/devcontainers/base:jammy",
-	"postCreateCommand": "./ubuntu-prereqs.sh && ./setup-crosstool-ng.sh",
-	"workspaceFolder": "/t", // matches GHA runner location
-	"workspaceMount": "source=${localWorkspaceFolder},target=/t,type=bind"
-}

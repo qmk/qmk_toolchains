@@ -1,15 +1,13 @@
 ---
-name: Invoke `crosstool-ng`
+name: (internal) Invoke `crosstool-ng`
 
 on:
   workflow_call:
     inputs:
-      runner_labels_json: { type: string, required: true }
       crosstool_host_os: { type: string, required: true }
       build_host: { type: string, required: true }
       target_host: { type: string, required: true }
       build_script: { type: string, required: true }
-      canadian_build: { type: boolean, required: false, default: false }
       fetch_bootstrap: { type: boolean, required: false, default: true }
       toolchain_suffix: { type: string, required: false, default: "" }
       phase_number: { type: number, required: true }
@@ -18,35 +16,21 @@ on:
       save_state: { type: boolean, required: false, default: true }
       toolchain_tarball: { type: boolean, required: false, default: false }
 
+env:
+  TC_WORKDIR: "/t"
+  EXECUTE_UNDER_DOCKER: true
+  GIT_DISCOVERY_ACROSS_FILESYSTEM: true
+
 jobs:
   invoke-crosstool:
     name: ${{ inputs.phase_number }}. ct-ng ${{ inputs.crosstool_args }}
-    runs-on: ${{ fromJSON(inputs.runner_labels_json) }}
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Clone toolchains repo for prereqs
-        uses: actions/checkout@v4
-
-      - name: Prerequisites (Linux)
-        if: ${{ runner.os == 'Linux' }}
-        run: |
-          ./ubuntu-prereqs.sh
-          echo "$HOME/.local/crosstool-ng/bin" >> $GITHUB_PATH
-
-      - name: Prerequisites (macOS)
-        if: ${{ runner.os == 'macOS' }}
-        run: |
-          brew install autoconf automake bash binutils coreutils gawk gnu-sed help2man make meson ncurses pkg-config python3
-          echo "$HOME/.local/crosstool-ng/bin" >> $GITHUB_PATH
-
-      - name: Show disk space available - before
-        run: |
-          df -h
-
-      - name: Maximize build space for Linux
+      - name: Maximize build space
         uses: easimon/maximize-build-space@master
-        if: ${{ runner.os == 'Linux' }}
         with:
+          build-mount-path: /b
           root-reserve-mb: 2048
           swap-size-mb: 8192
           remove-dotnet: "true"
@@ -55,201 +39,163 @@ jobs:
           remove-codeql: "true"
           remove-docker-images: "true"
 
-      - name: Setup workdir on Linux
-        if: ${{ runner.os == 'Linux' }}
+      - name: Move docker data root to /b for more space
         run: |
-          sudo mkdir /t
-          sudo mount --bind $GITHUB_WORKSPACE /t
-          echo "TC_WORKDIR=/t" >> $GITHUB_ENV
-          echo "EXECUTE_UNDER_DOCKER=1" >> $GITHUB_ENV
+          set -x
+          DOCKER_DATA_ROOT='/b/.docker'
+          DOCKER_DAEMON_JSON='/etc/docker/daemon.json'
+          sudo mkdir -p "${DOCKER_DATA_ROOT}"
+          echo "{\"data-root\": \"${DOCKER_DATA_ROOT}\"}" | sudo tee "${DOCKER_DAEMON_JSON}"
+          sudo systemctl restart docker
+          sudo df -h
 
-      - name: Setup workdir everywhere else
-        if: ${{ runner.os != 'Linux' }}
+      - name: Move GitHub _temp to /b for more space
         run: |
-          echo "TC_WORKDIR=$GITHUB_WORKSPACE" >> $GITHUB_ENV
+          set -x
+          sudo mkdir -p /b/_temp
+          sudo mount --bind /b/_temp /home/runner/work/_temp
+          sudo chown -R $(id -u):$(id -g) /home/runner/work/_temp
 
-      - name: Create case-sensitive workspace volume for macOS
-        if: ${{ runner.os == 'macOS' }}
+      - name: Move GitHub workspace to /b for more space
         run: |
-          cd $HOME
-          find $GITHUB_WORKSPACE -mindepth 1 -maxdepth 1 -type d -exec rm -rf '{}' \; -prune
-          find $GITHUB_WORKSPACE -type f -exec rm -rf '{}' \;
-          counter=10
-          while [[ $counter -gt 0 ]] ; do
-            if [[ -z "$(mount 2>/dev/null| grep $GITHUB_WORKSPACE)" ]]; then
-              break
-            fi
-            hdiutil detach $GITHUB_WORKSPACE -force || true
-            counter=$(( counter - 1 ))
-            sleep 15
-          done
-          counter=10
-          while [[ $counter -gt 0 ]] ; do
-            if [[ ! -z "$(mount 2>/dev/null| grep $GITHUB_WORKSPACE)" ]]; then
-              break
-            fi
-            rm -rf $HOME/Workspace.sparseimage || true
-            hdiutil create $HOME/Workspace.sparseimage -volname toolchains -type SPARSE -size 80g -fs HFSX
-            hdiutil attach $HOME/Workspace.sparseimage -mountpoint $GITHUB_WORKSPACE
-            counter=$(( counter - 1 ))
-            sleep 15
-          done
-          cd $GITHUB_WORKSPACE
-
-      - name: Show disk space available - after
-        run: |
-          df -h
+          set -x
+          sudo mkdir -p /b/workspace
+          sudo mount --bind /b/workspace $GITHUB_WORKSPACE
+          sudo chown -R $(id -u):$(id -g) $GITHUB_WORKSPACE
 
       - name: Clone toolchains repo
         uses: actions/checkout@v4
 
-      - name: Download copy of crosstool-ng
-        uses: actions/download-artifact@v4
-        with:
-          name: crosstool.${{ inputs.crosstool_host_os }}
-
-      - name: Extract copy of crosstool-ng
+      - name: Setup workdir
         run: |
-          tar xf ct-ng.tar -C $HOME
+          set -x
+          # Shorten the path to `/t` because the normal path to the workspace is too long for some build configurations
+          sudo mkdir $TC_WORKDIR
+          sudo mount --bind $GITHUB_WORKSPACE $TC_WORKDIR
+
+      - name: Cache check
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            state.tar
+            build_logs.tar.zst
+            qmk_toolchain-gcc*-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}.tar.zst
+          key: cache-${{ inputs.crosstool_host_os }}-${{ inputs.build_host }}-${{ inputs.target_host }}${{ inputs.toolchain_suffix }}-phase${{ inputs.phase_number }}-${{ hashFiles('.github/workflows/**', '${{ inputs.build_script }}', 'Dockerfile*', 'common.bashinc') }}
+
+      - name: Look at all this space for activities
+        run: |
+          set -x
+          sudo df -h
+          sudo mount | column -t
 
       - name: Download source tarballs
+        if: steps.cache.outputs.cache-hit != 'true'
         uses: actions/download-artifact@v4
         with:
-          name: tarballs.tar
+          name: tarballs
 
       - name: Extract source tarballs
+        if: steps.cache.outputs.cache-hit != 'true'
         run: |
-          tar xf tarballs.tar
+          set -x
+          df -h .
+          tar axf tarballs.tar.zst
 
       - name: Download bootstrap toolchain
-        if: ${{ inputs.fetch_bootstrap && runner.os == 'Linux' }}
+        if: steps.cache.outputs.cache-hit != 'true' && inputs.fetch_bootstrap == true
         uses: actions/download-artifact@v4
         with:
           name: toolchain-host_${{ inputs.crosstool_host_os }}-target_${{ inputs.crosstool_host_os }}_qmk_bootstrap
 
       - name: Extract bootstrap toolchain
-        if: ${{ inputs.fetch_bootstrap && runner.os == 'Linux' }}
+        if: steps.cache.outputs.cache-hit != 'true' && inputs.fetch_bootstrap == true
         run: |
+          set -x
           mkdir -p toolchains
-          tar xf qmk_toolchain*host_${{ inputs.crosstool_host_os }}-target_${{ inputs.crosstool_host_os }}_qmk_bootstrap.tar.xz -C toolchains
-          rm qmk_toolchain*host_${{ inputs.crosstool_host_os }}-target_${{ inputs.crosstool_host_os }}_qmk_bootstrap.tar.xz
+          tar avxf qmk_toolchain*host_${{ inputs.crosstool_host_os }}-target_${{ inputs.crosstool_host_os }}_qmk_bootstrap.tar.zst -C toolchains
+          rm qmk_toolchain*host_${{ inputs.crosstool_host_os }}-target_${{ inputs.crosstool_host_os }}_qmk_bootstrap.tar.zst
 
-      - name: Download canadian host toolchain
-        if: ${{ inputs.canadian_build }}
-        uses: actions/download-artifact@v4
-        with:
-          name: toolchain-host_${{ inputs.crosstool_host_os }}-target_${{ inputs.build_host }}
-
-      - name: Extract canadian host toolchain
-        if: ${{ inputs.canadian_build }}
+      - name: Determine previous phase number
+        if: steps.cache.outputs.cache-hit != 'true' && inputs.restore_state == true
         run: |
-          mkdir -p toolchains
-          tar xf qmk_toolchain*host_${{ inputs.crosstool_host_os }}-target_${{ inputs.build_host }}.tar.xz -C toolchains
-          rm qmk_toolchain*host_${{ inputs.crosstool_host_os }}-target_${{ inputs.build_host }}.tar.xz
+          echo LAST_PHASE_NUMBER=$((${{ inputs.phase_number }} - 1)) >> $GITHUB_ENV
 
       - name: Download build state
-        if: ${{ inputs.restore_state }}
+        if: steps.cache.outputs.cache-hit != 'true' && inputs.restore_state == true
         uses: actions/download-artifact@v4
         with:
-          name: state-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}
+          name: state-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}-phase${{ env.LAST_PHASE_NUMBER }}
 
       - name: Extract build state
-        if: ${{ inputs.restore_state }}
+        if: steps.cache.outputs.cache-hit != 'true' && inputs.restore_state == true
         run: |
+          set -x
           cd $TC_WORKDIR
           # Ensure tarballs are extracted before we restore state as we've deleted $CT_COMMON_SRC_DIR before saving the state tarball
           ./${{ inputs.build_script }} +companion_tools_for_build
           # Extract the state tarball
-          tar xf state-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}.tar
+          tar axf state.tar
 
       - name: Build toolchain
+        if: steps.cache.outputs.cache-hit != 'true'
         run: |
+          set -x
           cd $TC_WORKDIR
-          if [ "$RUNNER_OS" == "macOS" ]; then
-            export PATH="$PATH:/usr/local/opt/binutils/bin:/usr/local/opt/coreutils/bin:/usr/local/opt/libtool/libexec/gnubin"
-            export CPPFLAGS="-I/usr/local/opt/ncurses/include -I/usr/local/opt/gettext/include"
-            export LDFLAGS="-L/usr/local/opt/ncurses/lib -L/usr/local/opt/gettext/lib"
-            export PATH="$PATH:/opt/homebrew/opt/binutils/bin:/opt/homebrew/opt/coreutils/bin:/opt/homebrew/opt/libtool/libexec/gnubin"
-            export CPPFLAGS="$CPPFLAGS -I/opt/homebrew/opt/ncurses/include -I/opt/homebrew/opt/gettext/include"
-            export LDFLAGS="$LDFLAGS -L/opt/homebrew/opt/ncurses/lib -L/opt/homebrew/opt/gettext/lib"
-            # Prefer to target Monterey
-            export MACOSX_DEPLOYMENT_TARGET=12.0
-          fi
           # Kick off the requested build phase (kill after 5h45m so logs can be gathered)
           timeout 19800 ./${{ inputs.build_script }} ${{ inputs.crosstool_args }}
-          find . \( -name \*.log \) -print0 | xargs -0 tar cvf build_logs.tar
+
+      - name: Gather build logs
+        if: always() && !cancelled()
+        run: |
+          set -x
+          find . \( -name \*.log \) -print0 | xargs -0 tar acvf build_logs.tar.zst || true
 
       - name: Upload build logs
         uses: actions/upload-artifact@v4
-        if: ${{ always() && !cancelled() }}
+        if: always() && !cancelled()
         with:
           name: build.log-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}-phase${{ inputs.phase_number }}
           path: |
-            build_logs.tar
+            build_logs.tar.zst
 
       - name: Make build state
-        if: ${{ inputs.save_state }}
+        if: steps.cache.outputs.cache-hit != 'true' && inputs.save_state == true
         run: |
+          set -x
           # We're saving state so we can resume at each step -- some of the internal build directories can be blown away as restarting from a step will recreate them.
-          if [ "$RUNNER_OS" == "macOS" ]; then
-            export PATH="$PATH:/usr/local/opt/coreutils/bin"
-            export STAT="gstat"
-          else
-            export STAT="stat"
-          fi
-          latest_state=$(dirname $(find $(find build -mindepth 4 -maxdepth 5 -type d -name state) -mindepth 2 -maxdepth 2 -type f -name env.sh -print0 | xargs -0r $STAT -c '%w|%n' | sort | cut -d'|' -f2 | tail -n1))
-          tar cf state-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}.tar $latest_state
+          latest_state=$(dirname $(find $(find build -mindepth 4 -maxdepth 5 -type d -name state) -mindepth 2 -maxdepth 2 -type f -name env.sh -print0 | xargs -0r stat -c '%w|%n' | sort | cut -d'|' -f2 | tail -n1))
+          tar acf state.tar $latest_state
 
       - name: Upload build state
-        if: ${{ inputs.save_state }}
+        if: inputs.save_state == true
         uses: actions/upload-artifact@v4
         with:
-          name: state-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}
-          path: state-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}.tar
+          name: state-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}-phase${{ inputs.phase_number }}
+          path: state.tar
           overwrite: true
 
       - name: Make toolchain tarball
-        if: ${{ inputs.toolchain_tarball }}
+        if: steps.cache.outputs.cache-hit != 'true' && inputs.toolchain_tarball == true
         run: |
-          if [ "$RUNNER_OS" == "macOS" ]; then
-            export PATH="$PATH:/usr/local/opt/coreutils/bin"
-            export STAT="gstat"
-          else
-            export STAT="stat"
-          fi
+          set -x
           if [[ "${{ inputs.build_host }}" == "windowsX64" ]] || [[ "${{ inputs.build_host }}" == "windowsARM64" ]]; then
             export DEREF_SYMLINKS_ARGS="--dereference --hard-dereference"
           fi
-          latest_state=$(dirname $(find $(find build -mindepth 4 -maxdepth 5 -type d -name state) -mindepth 2 -maxdepth 2 -type f -name env.sh -print0 | xargs -0r $STAT -c '%w|%n' | sort | cut -d'|' -f2 | tail -n1))
+          latest_state=$(dirname $(find $(find build -mindepth 4 -maxdepth 5 -type d -name state) -mindepth 2 -maxdepth 2 -type f -name env.sh -print0 | xargs -0r stat -c '%w|%n' | sort | cut -d'|' -f2 | tail -n1))
           source "$latest_state/env.sh"
-          tar cf qmk_toolchain-gcc${CT_GCC_VERSION}-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}.tar -C toolchains host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }} ${DEREF_SYMLINKS_ARGS:-}
-          xz -T 0 -z -9 -e qmk_toolchain-gcc${CT_GCC_VERSION}-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}.tar
+          tar avcf qmk_toolchain-gcc${CT_GCC_VERSION}-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}.tar.zst -C toolchains host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }} ${DEREF_SYMLINKS_ARGS:-}
 
       - name: Upload toolchain
-        if: ${{ inputs.toolchain_tarball }}
+        if: inputs.toolchain_tarball == true
         uses: actions/upload-artifact@v4
         with:
           name: toolchain-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}
           path: |
-            qmk_toolchain-gcc*-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}.tar.xz
+            qmk_toolchain-gcc*-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}.tar.zst
 
-      - name: Unmount case-sensitive workspace volume for macOS
-        if: always()
+      - name: Space, the final job step
         run: |
-          if [ "$RUNNER_OS" == "macOS" ]; then
-            cd $HOME
-            find $GITHUB_WORKSPACE -mindepth 1 -maxdepth 1 -type d -exec rm -rf '{}' \; -prune
-            find $GITHUB_WORKSPACE -type f -exec rm -rf '{}' \;
-
-            counter=10
-            while [[ $counter -gt 0 ]] ; do
-              if [[ -z "$(mount 2>/dev/null| grep $GITHUB_WORKSPACE)" ]]; then
-                break
-              fi
-              hdiutil detach $GITHUB_WORKSPACE -force || true
-              counter=$(( counter - 1 ))
-              sleep 15
-            done
-
-            rm -rf $HOME/Workspace.sparseimage || true
-          fi
+          set -x
+          sudo df -h
+          sudo mount | column -t
