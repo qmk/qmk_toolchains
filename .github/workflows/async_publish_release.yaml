@@ -36,7 +36,7 @@ jobs:
 
       - name: Download artifact
         id: download-artifact
-        uses: dawidd6/action-download-artifact@v6
+        uses: dawidd6/action-download-artifact@v8
         with:
           run_id: ${{ github.event.inputs.run_id }}
           name_is_regexp: true
