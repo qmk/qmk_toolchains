@@ -10,6 +10,8 @@ cd "$script_dir"
 ./build-libusb.sh
 ./build-dfu-programmer.sh
 ./build-dfu-util.sh
+./build-avrdude.sh
+./build-mdloader.sh
 
 triples=(
     x86_64-qmk-linux-gnu
@@ -21,7 +23,7 @@ triples=(
 )
 
 for triple in "${triples[@]}"; do
-    xroot_dir="$script_dir/xroot/$(fn_os_arch_fromtriplet "$triple")"
+    xroot_dir="$script_dir/.xroot/$(fn_os_arch_fromtriplet "$triple")"
 
     if [ -n "$(fn_os_arch_fromtriplet $triple | grep macos)" ]; then
         STRIP="${triple}-strip"
@@ -31,10 +33,12 @@ for triple in "${triples[@]}"; do
 
     ls -1 "$xroot_dir/bin" | while read -r bin; do
         echo "Stripping $bin"
-        ${STRIP} "$xroot_dir/bin/$bin"
+        ${STRIP} "$xroot_dir/bin/$bin" || true
 
         if [ -n "$(fn_os_arch_fromtriplet $triple | grep macos)" ]; then
             rcodesign sign --runtime-version 12.0.0 --code-signature-flags runtime "$xroot_dir/bin/$bin" || true
         fi
     done
+
+    tar acf "$script_dir/flashers-$(fn_os_arch_fromtriplet "$triple").tar.zst" -C "$xroot_dir" .
 done

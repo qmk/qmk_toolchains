@@ -38,8 +38,8 @@ for triple in "${triples[@]}"; do
     find /gcc /usr/local -path '*'$triple'*include-fixed/dispatch/object.h' -print -exec sudo rm -rf '{}' \; 2>/dev/null || true
 
     echo
-    build_dir="$script_dir/build/$(fn_os_arch_fromtriplet "$triple")/dfu-programmer"
-    xroot_dir="$script_dir/xroot/$(fn_os_arch_fromtriplet "$triple")"
+    build_dir="$script_dir/.build/$(fn_os_arch_fromtriplet "$triple")/dfu-programmer"
+    xroot_dir="$script_dir/.xroot/$(fn_os_arch_fromtriplet "$triple")"
     mkdir -p "$build_dir"
     echo "Building dfu-programmer for $triple => $build_dir"
     pushd "$build_dir" >/dev/null 2>&1

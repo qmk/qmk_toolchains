@@ -3,8 +3,6 @@ tarballs
 toolchains
 qmk_toolchain*
 
-flashing/build
-flashing/xroot
-flashing/libusb
-flashing/dfu-programmer
-flashing/dfu-util
+flashing/*
+!flashing/*.sh
+!flashing/support

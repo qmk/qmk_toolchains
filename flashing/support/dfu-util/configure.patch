@@ -1,0 +1,14 @@
+diff --git a/configure.ac b/configure.ac
+index 262701d..7726a5d 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -17,8 +17,7 @@ AC_PROG_CC
+ # On FreeBSD the libusb-1.0 is called libusb and resides in system location
+ AC_CHECK_LIB([usb], [libusb_init],, [native_libusb=no],)
+ AS_IF([test x$native_libusb = xno], [
+-    PKG_CHECK_MODULES([USB], [libusb-1.0 >= 1.0.0],,
+-        AC_MSG_ERROR([*** Required libusb-1.0 >= 1.0.0 not installed ***]))
++    AC_SEARCH_LIBS(libusb_init, usb-1.0,, [AC_MSG_ERROR([libusb 1.0 not found])])
+ ])
+ 
+ LIBS="$LIBS $USB_LIBS"
