@@ -111,6 +111,9 @@ function fn_os_arch_fromtriplet() {
         return
     fi
 
+    # Remove the qmk vendor from the bootstrapped compiler
+    input_var=$(echo $input_var | sed -e 's@qmk-@@g')
+
     local input_arch=$(echo $input_var | cut -d'-' -f1)
     local input_os=$(echo $input_var | cut -d'-' -f2)
 
