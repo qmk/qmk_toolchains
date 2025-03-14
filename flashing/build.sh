@@ -16,6 +16,7 @@ cd "$script_dir"
 ./build-avrdude.sh
 ./build-mdloader.sh
 ./build-teensyloader.sh
+./build-bootloadHID.sh
 
 triples=(
     x86_64-qmk-linux-gnu
