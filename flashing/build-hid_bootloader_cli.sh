@@ -27,7 +27,7 @@ else
     git -C "$script_dir/hid_bootloader_cli" pull --ff-only
 fi
 
-pushd "$script_dir/hid_bootloader_cli/Bootloaders/HID/HostLoaderApp" >/dev/null 2>&1
+pushd "$script_dir/hid_bootloader_cli" >/dev/null 2>&1
 { patch -f -s -p1 <"$script_dir/support/hid_bootloader_cli/mods.patch"; } || true
 popd >/dev/null 2>&1
 

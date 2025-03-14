@@ -1,8 +1,8 @@
 diff --git a/Bootloaders/HID/HostLoaderApp/Makefile b/Bootloaders/HID/HostLoaderApp/Makefile
-index 3fbc7bd95..9c3306261 100644
+index 3fbc7bd95..0ac2398fb 100644
 --- a/Bootloaders/HID/HostLoaderApp/Makefile
 +++ b/Bootloaders/HID/HostLoaderApp/Makefile
-@@ -8,18 +8,20 @@ OS ?= LINUX
+@@ -8,26 +8,28 @@ OS ?= LINUX
  # work.
  #USE_LIBUSB ?= YES
  
@@ -11,25 +11,28 @@ index 3fbc7bd95..9c3306261 100644
  ifeq ($(OS), LINUX)  # also works on FreeBSD
  CC ?= gcc
  CFLAGS ?= -O2 -Wall
- hid_bootloader_cli: hid_bootloader_cli.c
+-hid_bootloader_cli: hid_bootloader_cli.c
 -	$(CC) $(CFLAGS) $(CPPFLAGS) -DUSE_LIBUSB -o hid_bootloader_cli hid_bootloader_cli.c -lusb $(LDFLAGS)
++$(OUTDIR)/hid_bootloader_cli: hid_bootloader_cli.c
 +	$(CC) $(CFLAGS) $(CPPFLAGS) -DUSE_LIBUSB -o $(OUTDIR)/hid_bootloader_cli hid_bootloader_cli.c -lusb $(LDFLAGS)
  
  
  else ifeq ($(OS), WINDOWS)
  CC ?= i586-mingw32msvc-gcc
  CFLAGS ?= -O2 -Wall
- hid_bootloader_cli.exe: hid_bootloader_cli.c
+-hid_bootloader_cli.exe: hid_bootloader_cli.c
 -	$(CC) $(CFLAGS) -s -DUSE_WIN32 -o hid_bootloader_cli.exe hid_bootloader_cli.c -lhid -lsetupapi -lwinmm
++$(OUTDIR)/hid_bootloader_cli.exe: hid_bootloader_cli.c
 +	$(CC) $(CFLAGS) -s -DUSE_WIN32 -o $(OUTDIR)/hid_bootloader_cli.exe hid_bootloader_cli.c -lhid -lsetupapi -lwinmm
  
  
  else ifeq ($(OS), MACOSX)
-@@ -27,7 +29,7 @@ ifeq ($(USE_LIBUSB), YES)
+ ifeq ($(USE_LIBUSB), YES)
  CC ?= gcc
  CFLAGS ?= -O2 -Wall
- hid_bootloader_cli: hid_bootloader_cli.c
+-hid_bootloader_cli: hid_bootloader_cli.c
 -	$(CC) $(CFLAGS) -DUSE_LIBUSB -DMACOSX -o hid_bootloader_cli hid_bootloader_cli.c -lusb -I /usr/local/include -L/usr/local/lib
++$(OUTDIR)/hid_bootloader_cli: hid_bootloader_cli.c
 +	$(CC) $(CFLAGS) -DUSE_LIBUSB -DMACOSX -o $(OUTDIR)/hid_bootloader_cli hid_bootloader_cli.c -lusb $(LDFLAGS)
  	 
  else
