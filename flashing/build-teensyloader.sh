@@ -47,12 +47,16 @@ for triple in "${triples[@]}"; do
     if [ -n "$(fn_os_arch_fromtriplet $triple | grep windows)" ]; then
         OS=WINDOWS
         unset SDK
+        CFLAGS="-static $CFLAGS"
+        LDFLAGS="-static $LDFLAGS"
     elif [ -n "$(fn_os_arch_fromtriplet $triple | grep macos)" ]; then
         OS=MACOSX
         SDK=/sdk
     else
         OS=LINUX
         unset SDK
+        CFLAGS="-static $CFLAGS"
+        LDFLAGS="-static $LDFLAGS"
     fi
 
     make clean

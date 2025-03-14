@@ -49,8 +49,11 @@ for triple in "${triples[@]}"; do
         echo "MACOSX_DEPLOYMENT_TARGET=$MACOSX_DEPLOYMENT_TARGET"
         echo "SDK_VERSION=$SDK_VERSION"
     elif [ -n "$(fn_os_arch_fromtriplet $triple | grep windows)" ]; then
-        CFLAGS="$CFLAGS -I$script_dir/support/windows-ddk"
-        LDFLAGS="$LDFLAGS -lhid -lusb -lsetupapi"
+        CFLAGS="$CFLAGS -static"
+        LDFLAGS="$LDFLAGS -static -lhid -lusb -lsetupapi"
+    else
+        CFLAGS="$CFLAGS -static"
+        LDFLAGS="$LDFLAGS -static"
     fi
 
     rcmd make clean

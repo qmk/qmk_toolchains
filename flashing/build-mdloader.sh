@@ -38,12 +38,20 @@ for triple in "${triples[@]}"; do
 
     if [ -n "$(fn_os_arch_fromtriplet $triple | grep windows)" ]; then
         OS=Windows_NT
+        CFLAGS="-static"
+        LDFLAGS="-static"
+    elif [ -n "$(fn_os_arch_fromtriplet $triple | grep macos)" ]; then
+        unset OS
+        unset CFLAGS
+        unset LDFLAGS
     else
         unset OS
+        CFLAGS="-static"
+        LDFLAGS="-static"
     fi
 
     make clean
-    make -j$(nproc) OBJDIR="$build_dir" CC="${triple}-gcc" CXX="${triple}-g++" OS=${OS:-}
+    make -j$(nproc) OBJDIR="$build_dir" CC="${triple}-gcc" CXX="${triple}-g++" OS=${OS:-} CFLAGS="${CFLAGS:-}" LDFLAGS="${LDFLAGS:-}"
     cp "$build_dir/mdloader"* "$xroot_dir/bin"
     popd >/dev/null 2>&1
 done

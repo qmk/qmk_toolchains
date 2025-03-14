@@ -39,12 +39,15 @@ for triple in "${triples[@]}"; do
     CFLAGS=$(pkg-config --with-path="$xroot_dir/lib/pkgconfig" --static --cflags libusb-1.0 libserialport)
     LDFLAGS=$(pkg-config --with-path="$xroot_dir/lib/pkgconfig" --static --libs libusb-1.0 libserialport)
 
-    if [ -z "$(fn_os_arch_fromtriplet $triple | grep macos)" ]; then
-        CFLAGS="$CFLAGS"
-        LDFLAGS="$LDFLAGS -pthread"
-    else
+    if [ -n "$(fn_os_arch_fromtriplet $triple | grep macos)" ]; then
         echo "MACOSX_DEPLOYMENT_TARGET=$MACOSX_DEPLOYMENT_TARGET"
         echo "SDK_VERSION=$SDK_VERSION"
+    elif [ -n "$(fn_os_arch_fromtriplet $triple | grep windows)" ]; then
+        CFLAGS="$CFLAGS -static"
+        LDFLAGS="$LDFLAGS -static -pthread"
+    else
+        CFLAGS="$CFLAGS -static"
+        LDFLAGS="$LDFLAGS -static -pthread"
     fi
 
     rcmd cmake "$script_dir/avrdude" -G Ninja -DCMAKE_TOOLCHAIN_FILE="$script_dir/support/$(fn_os_arch_fromtriplet "$triple")-toolchain.cmake" -DCMAKE_PREFIX_PATH="$xroot_dir" -DCMAKE_INSTALL_PREFIX="$xroot_dir" -DCMAKE_C_FLAGS="$CFLAGS" -DCMAKE_EXE_LINKER_FLAGS="$LDFLAGS"
