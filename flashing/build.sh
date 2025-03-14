@@ -8,12 +8,14 @@ source "$script_dir/../common.bashinc"
 cd "$script_dir"
 
 ./build-libusb.sh
+./build-libusb-compat.sh
 ./build-libftdi.sh
 ./build-libserialport.sh
 ./build-dfu-programmer.sh
 ./build-dfu-util.sh
 ./build-avrdude.sh
 ./build-mdloader.sh
+./build-teensyloader.sh
 
 triples=(
     x86_64-qmk-linux-gnu
