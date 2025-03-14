@@ -44,7 +44,7 @@ for triple in "${triples[@]}"; do
     echo "Building libusb for $triple => $build_dir"
     pushd "$build_dir" >/dev/null 2>&1
     rm -rf "$build_dir/*"
-    rcmd "$script_dir/libusb/configure" --prefix="$xroot_dir" --host=$triple --enable-shared=no --enable-static --disable-udev CC="${triple}-gcc" CXX="${triple}-g++"
+    rcmd "$script_dir/libusb/configure" --prefix="$xroot_dir" --host=$triple --enable-shared=no --enable-static --disable-udev CC="${triple}-gcc" CXX="${triple}-g++" CFLAGS="-fPIC" LDFLAGS="-fPIC"
     make clean
     make -j$(nproc) install
     popd >/dev/null 2>&1

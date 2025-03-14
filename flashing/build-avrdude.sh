@@ -36,8 +36,8 @@ for triple in "${triples[@]}"; do
     pushd "$build_dir" >/dev/null 2>&1
     rm -rf "$build_dir/*"
 
-    CFLAGS=$(pkg-config --with-path="$xroot_dir/lib/pkgconfig" --static --cflags libusb-1.0)
-    LDFLAGS=$(pkg-config --with-path="$xroot_dir/lib/pkgconfig" --static --libs libusb-1.0)
+    CFLAGS=$(pkg-config --with-path="$xroot_dir/lib/pkgconfig" --static --cflags libusb-1.0 libserialport)
+    LDFLAGS=$(pkg-config --with-path="$xroot_dir/lib/pkgconfig" --static --libs libusb-1.0 libserialport)
 
     if [ -z "$(fn_os_arch_fromtriplet $triple | grep macos)" ]; then
         CFLAGS="$CFLAGS"

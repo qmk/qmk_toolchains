@@ -8,6 +8,8 @@ source "$script_dir/../common.bashinc"
 cd "$script_dir"
 
 ./build-libusb.sh
+./build-libftdi.sh
+./build-libserialport.sh
 ./build-dfu-programmer.sh
 ./build-dfu-util.sh
 ./build-avrdude.sh
