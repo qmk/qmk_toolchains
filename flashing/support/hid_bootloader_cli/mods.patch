@@ -1,0 +1,65 @@
+diff --git a/Bootloaders/HID/HostLoaderApp/Makefile b/Bootloaders/HID/HostLoaderApp/Makefile
+index 3fbc7bd95..9c3306261 100644
+--- a/Bootloaders/HID/HostLoaderApp/Makefile
++++ b/Bootloaders/HID/HostLoaderApp/Makefile
+@@ -8,18 +8,20 @@ OS ?= LINUX
+ # work.
+ #USE_LIBUSB ?= YES
+ 
++OUTDIR ?= build
++
+ ifeq ($(OS), LINUX)  # also works on FreeBSD
+ CC ?= gcc
+ CFLAGS ?= -O2 -Wall
+ hid_bootloader_cli: hid_bootloader_cli.c
+-	$(CC) $(CFLAGS) $(CPPFLAGS) -DUSE_LIBUSB -o hid_bootloader_cli hid_bootloader_cli.c -lusb $(LDFLAGS)
++	$(CC) $(CFLAGS) $(CPPFLAGS) -DUSE_LIBUSB -o $(OUTDIR)/hid_bootloader_cli hid_bootloader_cli.c -lusb $(LDFLAGS)
+ 
+ 
+ else ifeq ($(OS), WINDOWS)
+ CC ?= i586-mingw32msvc-gcc
+ CFLAGS ?= -O2 -Wall
+ hid_bootloader_cli.exe: hid_bootloader_cli.c
+-	$(CC) $(CFLAGS) -s -DUSE_WIN32 -o hid_bootloader_cli.exe hid_bootloader_cli.c -lhid -lsetupapi -lwinmm
++	$(CC) $(CFLAGS) -s -DUSE_WIN32 -o $(OUTDIR)/hid_bootloader_cli.exe hid_bootloader_cli.c -lhid -lsetupapi -lwinmm
+ 
+ 
+ else ifeq ($(OS), MACOSX)
+@@ -27,7 +29,7 @@ ifeq ($(USE_LIBUSB), YES)
+ CC ?= gcc
+ CFLAGS ?= -O2 -Wall
+ hid_bootloader_cli: hid_bootloader_cli.c
+-	$(CC) $(CFLAGS) -DUSE_LIBUSB -DMACOSX -o hid_bootloader_cli hid_bootloader_cli.c -lusb -I /usr/local/include -L/usr/local/lib
++	$(CC) $(CFLAGS) -DUSE_LIBUSB -DMACOSX -o $(OUTDIR)/hid_bootloader_cli hid_bootloader_cli.c -lusb $(LDFLAGS)
+ 	 
+ else
+ CC ?= gcc
+@@ -37,23 +39,23 @@ SDK ?= $(shell xcrun --show-sdk-path)
+ #CC = /Developer_xcode32/usr/bin/gcc-4.0
+ #CFLAGS = -O2 -Wall -arch i386 -arch ppc
+ CFLAGS ?= -O2 -Wall
+-hid_bootloader_cli: hid_bootloader_cli.c
++$(OUTDIR)/hid_bootloader_cli: hid_bootloader_cli.c
+ ifeq ($(SDK),)
+ 	$(error SDK was not found. To use this type of compilation please install Xcode)
+ endif
+-	$(CC) $(CFLAGS) -DUSE_APPLE_IOKIT -isysroot $(SDK) -o hid_bootloader_cli hid_bootloader_cli.c -Wl,-syslibroot,$(SDK) -framework IOKit -framework CoreFoundation
++	$(CC) $(CFLAGS) -DUSE_APPLE_IOKIT -isysroot $(SDK) -o $(OUTDIR)/hid_bootloader_cli hid_bootloader_cli.c -Wl,-syslibroot,$(SDK) -framework IOKit -framework CoreFoundation
+ 
+ endif
+ 
+ else ifeq ($(OS), BSD)  # works on NetBSD and OpenBSD
+ CC ?= gcc
+ CFLAGS ?= -O2 -Wall
+-hid_bootloader_cli: hid_bootloader_cli.c
+-	$(CC) $(CFLAGS) -s -DUSE_UHID -o hid_bootloader_cli hid_bootloader_cli.c
++$(OUTDIR)/hid_bootloader_cli: hid_bootloader_cli.c
++	$(CC) $(CFLAGS) -s -DUSE_UHID -o $(OUTDIR)/hid_bootloader_cli hid_bootloader_cli.c
+ 
+ 
+ endif
+ 
+ 
+ clean:
+-	rm -f hid_bootloader_cli hid_bootloader_cli.exe*
++	rm -f $(OUTDIR)/hid_bootloader_cli $(OUTDIR)/hid_bootloader_cli.exe*

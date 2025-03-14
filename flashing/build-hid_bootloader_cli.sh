@@ -21,28 +21,28 @@ triples=(
     x86_64-apple-darwin24
 )
 
-if [ ! -d "$script_dir/teensyloader" ]; then
-    git clone https://github.com/PaulStoffregen/teensy_loader_cli.git "$script_dir/teensyloader"
+if [ ! -d "$script_dir/hid_bootloader_cli" ]; then
+    git clone https://github.com/abcminiuser/lufa.git "$script_dir/hid_bootloader_cli"
 else
-    git -C "$script_dir/teensyloader" pull --ff-only
+    git -C "$script_dir/hid_bootloader_cli" pull --ff-only
 fi
 
-pushd "$script_dir/teensyloader" >/dev/null 2>&1
-{ patch -f -s -p1 <"$script_dir/support/teensyloader/mods.patch"; } || true
+pushd "$script_dir/hid_bootloader_cli/Bootloaders/HID/HostLoaderApp" >/dev/null 2>&1
+{ patch -f -s -p1 <"$script_dir/support/hid_bootloader_cli/mods.patch"; } || true
 popd >/dev/null 2>&1
 
 for triple in "${triples[@]}"; do
     echo
-    build_dir="$script_dir/.build/$(fn_os_arch_fromtriplet "$triple")/teensyloader"
+    build_dir="$script_dir/.build/$(fn_os_arch_fromtriplet "$triple")/hid_bootloader_cli"
     xroot_dir="$script_dir/.xroot/$(fn_os_arch_fromtriplet "$triple")"
     mkdir -p "$build_dir"
-    echo "Building teensyloader for $triple => $build_dir"
+    echo "Building hid_bootloader_cli for $triple => $build_dir"
     rm -rf "$build_dir/*"
 
-    CFLAGS="$(pkg-config --with-path="$xroot_dir/lib/pkgconfig" --static --cflags libusb) -I$script_dir/support/hidapi"
+    CFLAGS="$(pkg-config --with-path="$xroot_dir/lib/pkgconfig" --static --cflags libusb) -I$script_dir/support/hid_bootloader_cli"
     LDFLAGS="$(pkg-config --with-path="$xroot_dir/lib/pkgconfig" --static --libs libusb) -L$xroot_dir/lib"
 
-    pushd "$script_dir/teensyloader" >/dev/null 2>&1
+    pushd "$script_dir/hid_bootloader_cli/Bootloaders/HID/HostLoaderApp" >/dev/null 2>&1
 
     if [ -n "$(fn_os_arch_fromtriplet $triple | grep windows)" ]; then
         OS=WINDOWS
@@ -57,6 +57,6 @@ for triple in "${triples[@]}"; do
 
     make clean
     make -j$(nproc) OBJDIR="$build_dir" CC="${triple}-gcc" OS=${OS:-} SDK=${SDK:-} CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" USE_LIBUSB=YES OUTDIR="$build_dir"
-    cp "$build_dir/teensy_loader_cli"* "$xroot_dir/bin"
+    cp "$build_dir/hid_bootloader_cli"* "$xroot_dir/bin"
     popd >/dev/null 2>&1
 done
