@@ -47,7 +47,7 @@ for triple in "${triples[@]}"; do
         echo "SDK_VERSION=$SDK_VERSION"
     fi
 
-    rcmd cmake "$script_dir/libftdi" -DCMAKE_TOOLCHAIN_FILE="$script_dir/support/$(fn_os_arch_fromtriplet "$triple")-toolchain.cmake" -DCMAKE_PREFIX_PATH="$xroot_dir" -DCMAKE_INSTALL_PREFIX="$xroot_dir" -DCMAKE_INSTALL_LIBDIR="$xroot_dir/lib" -DCMAKE_C_FLAGS="$CFLAGS" -DCMAKE_EXE_LINKER_FLAGS="$LDFLAGS" -DSTATICLIBS=ON -DDOCUMENTATION=OFF -DBUILD_TESTS=OFF -DFTDIPP=OFF -DPYTHON_BINDINGS=OFF -DFTDI_EEPROM=OFF -DEXAMPLES=OFF
+    rcmd cmake "$script_dir/libftdi" -G Ninja -DCMAKE_TOOLCHAIN_FILE="$script_dir/support/$(fn_os_arch_fromtriplet "$triple")-toolchain.cmake" -DCMAKE_PREFIX_PATH="$xroot_dir" -DCMAKE_INSTALL_PREFIX="$xroot_dir" -DCMAKE_INSTALL_LIBDIR="$xroot_dir/lib" -DCMAKE_C_FLAGS="$CFLAGS" -DCMAKE_EXE_LINKER_FLAGS="$LDFLAGS" -DSTATICLIBS=ON -DDOCUMENTATION=OFF -DBUILD_TESTS=OFF -DFTDIPP=OFF -DPYTHON_BINDINGS=OFF -DFTDI_EEPROM=OFF -DEXAMPLES=OFF
     rcmd cmake --build . --target ftdi1-static -- -j$(nproc)
     rcmd cmake --install . --component staticlibs
     rcmd cmake --install . --component headers

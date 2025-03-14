@@ -47,7 +47,7 @@ for triple in "${triples[@]}"; do
         echo "SDK_VERSION=$SDK_VERSION"
     fi
 
-    rcmd cmake "$script_dir/avrdude" -DCMAKE_TOOLCHAIN_FILE="$script_dir/support/$(fn_os_arch_fromtriplet "$triple")-toolchain.cmake" -DCMAKE_PREFIX_PATH="$xroot_dir" -DCMAKE_INSTALL_PREFIX="$xroot_dir" -DCMAKE_C_FLAGS="$CFLAGS" -DCMAKE_EXE_LINKER_FLAGS="$LDFLAGS"
+    rcmd cmake "$script_dir/avrdude" -G Ninja -DCMAKE_TOOLCHAIN_FILE="$script_dir/support/$(fn_os_arch_fromtriplet "$triple")-toolchain.cmake" -DCMAKE_PREFIX_PATH="$xroot_dir" -DCMAKE_INSTALL_PREFIX="$xroot_dir" -DCMAKE_C_FLAGS="$CFLAGS" -DCMAKE_EXE_LINKER_FLAGS="$LDFLAGS"
     rcmd cmake --build . --target install -- -j$(nproc)
     popd >/dev/null 2>&1
 done
