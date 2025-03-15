@@ -18,6 +18,7 @@ cd "$script_dir"
 ./build-teensyloader.sh
 ./build-bootloadHID.sh
 ./build-hid_bootloader_cli.sh
+./build-wb32-dfu-updater_cli.sh
 
 triples=(
     x86_64-qmk-linux-gnu
