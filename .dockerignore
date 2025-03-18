@@ -1,2 +1,3 @@
 *
-!qmk_toolchain*.tar.*
+!qmk_toolchain*host_linux*target_linux*.tar.*
+!qmk_toolchain*host_linux*target_windows*.tar.*

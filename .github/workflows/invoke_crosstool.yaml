@@ -11,7 +11,7 @@ on:
       fetch_bootstrap: { type: boolean, required: false, default: true }
       toolchain_suffix: { type: string, required: false, default: "" }
       phase_number: { type: number, required: true }
-      crosstool_args: { type: string, required: false, default: "+finish" }
+      script_args: { type: string, required: false, default: "+finish" }
       restore_state: { type: boolean, required: false, default: true }
       save_state: { type: boolean, required: false, default: true }
       toolchain_tarball: { type: boolean, required: false, default: false }
@@ -23,7 +23,7 @@ env:
 
 jobs:
   invoke-crosstool:
-    name: ${{ inputs.phase_number }}. ct-ng ${{ inputs.crosstool_args }}
+    name: ${{ inputs.phase_number }}. ct-ng ${{ inputs.script_args }}
     runs-on: ubuntu-latest
 
     steps:
@@ -143,7 +143,7 @@ jobs:
           set -x
           cd $TC_WORKDIR
           # Kick off the requested build phase (kill after 5h45m so logs can be gathered)
-          timeout 19800 ./${{ inputs.build_script }} ${{ inputs.crosstool_args }}
+          timeout 19800 ./${{ inputs.build_script }} ${{ inputs.script_args }}
 
       - name: Gather build logs
         if: always() && !cancelled()

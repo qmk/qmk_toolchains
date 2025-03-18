@@ -59,7 +59,8 @@ jobs:
               echo Found version ${CT_GCC_VERSION}.
 
               echo Packaging qmk_toolchains-gcc${CT_GCC_VERSION}-host_${arch}.tar.zst...
-              tar acf qmk_toolchains-gcc${CT_GCC_VERSION}-host_${arch}.tar.zst qmk_toolchains_${arch}
+              tar cf qmk_toolchains-gcc${CT_GCC_VERSION}-host_${arch}.tar --sort=name qmk_toolchains_${arch}
+              zstdmt -T0 -19 --long --rm --force qmk_toolchains-gcc${CT_GCC_VERSION}-host_${arch}.tar
 
               echo Showing file metadata of qmk_toolchains-gcc${CT_GCC_VERSION}-host_${arch}.tar.zst...
               ls -1al qmk_toolchains-gcc${CT_GCC_VERSION}-host_${arch}.tar.zst

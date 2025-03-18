@@ -102,6 +102,12 @@ jobs:
           sudo mount --bind /b/workspace $GITHUB_WORKSPACE
           sudo chown -R $(id -u):$(id -g) $GITHUB_WORKSPACE
 
+      - name: Install prereqs
+        run: |
+          set -x
+          sudo apt-get update
+          sudo apt-get install -y zstd
+
       - name: Clone toolchains repo
         uses: actions/checkout@v4
 
@@ -136,7 +142,8 @@ jobs:
             output_filename=$(ls qmk_toolchain*.tar.zst | grep $(basename $dir))
             echo "Repacking toolchain in $dir => $output_filename"
             [[ ! -f $output_filename ]] || rm -f $output_filename
-            tar acf $(basename ${output_filename}) -C toolchains $(basename $dir)
+            tar cf $(basename ${output_filename} .zst) --sort=name -C toolchains $(basename $dir)
+            zstdmt -T0 -19 --long --rm --force $(basename ${output_filename} .zst)
           done
 
       - name: Upload toolchain

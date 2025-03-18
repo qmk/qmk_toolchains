@@ -5,7 +5,7 @@ ARG OSX_SDK_URL="https://github.com/joseluisq/macosx-sdks/releases/download/15.0
 
 ARG OSX_CROSS_COMMIT="29fe6dd35522073c9df5800f8cd1feb4b9a993a8"
 
-ARG CROSSTOOL_REPO_REF="7458341776f14d4d12e6d6fe51382e87e832894f"
+ARG CROSSTOOL_REPO_REF="329bb4da71c4eb16a898ce98fd29287cb7259b80"
 
 # Get the macOS SDK
 FROM --platform=$BUILDPLATFORM alpine:${ALPINE_VERSION} AS sdk

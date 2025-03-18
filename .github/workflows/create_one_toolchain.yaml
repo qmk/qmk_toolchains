@@ -28,7 +28,7 @@ jobs:
       build_script: ${{ inputs.build_script }}
       fetch_bootstrap: ${{ inputs.fetch_bootstrap }}
       toolchain_suffix: ${{ inputs.toolchain_suffix }}
-      crosstool_args: "build STOP=cc_for_build"
+      script_args: "build STOP=cc_for_build"
       restore_state: false
       phase_number: 1
 
@@ -43,7 +43,7 @@ jobs:
       build_script: ${{ inputs.build_script }}
       fetch_bootstrap: ${{ inputs.fetch_bootstrap }}
       toolchain_suffix: ${{ inputs.toolchain_suffix }}
-      crosstool_args: "build RESTART=cc_for_host STOP=libc_post_cc"
+      script_args: "build RESTART=cc_for_host STOP=libc_post_cc"
       restore_state: true
       phase_number: 2
 
@@ -58,7 +58,7 @@ jobs:
       build_script: ${{ inputs.build_script }}
       fetch_bootstrap: ${{ inputs.fetch_bootstrap }}
       toolchain_suffix: ${{ inputs.toolchain_suffix }}
-      crosstool_args: "build RESTART=companion_libs_for_target STOP=companion_libs_for_target"
+      script_args: "build RESTART=companion_libs_for_target STOP=companion_libs_for_target"
       restore_state: true
       phase_number: 3
 
@@ -73,7 +73,7 @@ jobs:
       build_script: ${{ inputs.build_script }}
       fetch_bootstrap: ${{ inputs.fetch_bootstrap }}
       toolchain_suffix: ${{ inputs.toolchain_suffix }}
-      crosstool_args: "build RESTART=binutils_for_target"
+      script_args: "build RESTART=binutils_for_target"
       save_state: false
       toolchain_tarball: true
       phase_number: 4

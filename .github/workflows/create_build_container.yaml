@@ -13,7 +13,7 @@ permissions:
 env:
   TC_WORKDIR: "/t"
   EXECUTE_UNDER_DOCKER: true
-  CROSSTOOL_REPO_REF: 7458341776f14d4d12e6d6fe51382e87e832894f
+  CROSSTOOL_REPO_REF: 329bb4da71c4eb16a898ce98fd29287cb7259b80
 
 jobs:
   base_container:
