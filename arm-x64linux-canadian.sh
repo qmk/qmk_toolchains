@@ -10,8 +10,11 @@ source "${script_dir}/common.bashinc"
 build_one_help "$@"
 respawn_docker_if_needed "$@"
 
+# Intentionally build as canadian (even though we're on the same architecture)
+# to ensure libraries in the toolchain are compatible with the target, as well
+# as static linking correctly works (and doesn't fail the build).
 build_one \
-    --canadian-host=aarch64-unknown-linux-gnu \
+    --canadian-host=x86_64-qmk-linux-gnu \
     --sample-name=arm-none-eabi \
     --multilib-list=rmprofile \
     --libc=newlib \

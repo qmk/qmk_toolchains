@@ -27,7 +27,7 @@ declare -A check_files=(
 )
 
 declare -A host_suffixes=(
-    [linuxX64]='native.sh'
+    [linuxX64]='x64linux-canadian.sh'
     [linuxARM64]='aarch64linux-canadian.sh'
     [linuxRV64]='riscv64linux-canadian.sh'
     [macosARM64]='aarch64macos-canadian.sh'

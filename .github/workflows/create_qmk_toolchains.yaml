@@ -46,7 +46,7 @@ jobs:
             target_host: baremetalRV32
             build_script_prefix: riscv32
           - build_host: linuxX64
-            build_script_suffix: native
+            build_script_suffix: x64linux-canadian
           - build_host: linuxARM64
             build_script_suffix: aarch64linux-canadian
           - build_host: linuxRV64

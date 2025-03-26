@@ -10,16 +10,13 @@ source "${script_dir}/common.bashinc"
 build_one_help "$@"
 respawn_docker_if_needed "$@"
 
-if [[ $(uname -s) == "Linux" ]]; then
-    extra_args="--tools-prefix=x86_64-qmk-linux-gnu-"
-fi
-
+# Intentionally build as canadian (even though we're on the same architecture)
+# to ensure libraries in the toolchain are compatible with the target, as well
+# as static linking correctly works (and doesn't fail the build).
 build_one \
-    --sample-name=arm-none-eabi \
-    --multilib-list=rmprofile \
-    --libc=newlib \
+    --sample-name=avr \
+    --canadian-host=x86_64-qmk-linux-gnu \
     --binutils-plugins \
-    --extra-newlib-nano \
     --no-cross-gdb-python \
-    ${extra_args:-} \
+    --static-toolchain \
     "$@"
