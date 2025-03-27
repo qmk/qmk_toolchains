@@ -471,14 +471,9 @@ function build_one() {
     else
         nice -n 10 ionice -c 3 ct-ng ${positional_args[@]}
 
-        # Sign macOS executables (currently not working, gcc can't load LTO plugin on macOS without re-signing with the macOS codesign tool)
+        # Sign macOS executables
         if [ -n "$(echo $toolchain_dir | grep macos)" ]; then
-            #if [ ! -f "$script_dir/unsigned-$(basename $toolchain_dir).tar.zst" ]; then
-            #    tar acf "$script_dir/unsigned-$(basename $toolchain_dir).tar.zst" -C "$script_dir/toolchains" "$(basename $toolchain_dir)"
-            #fi
-            find $toolchain_dir -type f -executable | while read file; do
-                rcodesign sign --runtime-version 12.0.0 "$file" || true
-            done
+            find $toolchain_dir -type f -executable -print -exec rcodesign sign '{}' \; || true
         fi
     fi
 }

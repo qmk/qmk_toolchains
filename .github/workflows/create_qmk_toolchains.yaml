@@ -66,96 +66,9 @@ jobs:
       build_script: ${{ matrix.build_script_prefix }}-${{ matrix.build_script_suffix }}.sh
       fetch_bootstrap: false
 
-  temp-codesign-macos: # Temporary job; needs to run on macOS as rcodesign doesn't seem to correctly ad-hoc sign the macOS toolchains when creating LTO libraries
-    name: macOS ad-hoc codesign
-    needs: [create-toolchains]
-    runs-on: macos-latest
-    steps:
-      - name: Download macOS toolchains
-        uses: actions/download-artifact@v4
-        with:
-          pattern: toolchain-host_macos*
-          path: .
-          merge-multiple: true
-
-      - name: Upload unsigned macOS toolchains
-        uses: actions/upload-artifact@v4
-        with:
-          name: unsigned-macos-toolchains
-          path: |
-            qmk_toolchain-gcc*.tar.zst
-
-      - name: Unpack, sign, repack
-        run: |
-          set -x
-          for file in $(ls qmk_toolchain*.tar.*); do
-            echo "Extracting '$file'..."
-            target_dir="$(basename $file .tar.zst)"
-            mkdir -p "$target_dir"
-            tar axf "$file" -C "$target_dir"
-
-            echo "Signing executables in '$target_dir'..."
-            find "$target_dir" -type f -executable -print -exec codesign --force --sign - '{}' \;
-
-            echo "Repacking toolchain in '$target_dir' => '$file'..."
-            rm -f "$file" || true
-            tar cf "$(basename ${file} .zst)" --sort=name -C "$target_dir" .
-            zstdmt -T0 -19 --long --rm --force "$(basename ${file} .zst)"
-
-            rm -rf "$target_dir"
-          done
-
-      - name: Upload signed macOS ARM64-ARM toolchain
-        uses: actions/upload-artifact@v4
-        with:
-          name: toolchain-host_macosARM64-target_baremetalARM
-          overwrite: true
-          path: |
-            qmk_toolchain-gcc14.2.0-host_macosARM64-target_baremetalARM.tar.zst
-
-      - name: Upload signed macOS ARM64-AVR toolchain
-        uses: actions/upload-artifact@v4
-        with:
-          name: toolchain-host_macosARM64-target_baremetalAVR
-          overwrite: true
-          path: |
-            qmk_toolchain-gcc14.2.0-host_macosARM64-target_baremetalAVR.tar.zst
-
-      - name: Upload signed macOS ARM64-RV32 toolchain
-        uses: actions/upload-artifact@v4
-        with:
-          name: toolchain-host_macosARM64-target_baremetalRV32
-          overwrite: true
-          path: |
-            qmk_toolchain-gcc14.2.0-host_macosARM64-target_baremetalRV32.tar.zst
-
-      - name: Upload signed macOS X64-ARM toolchain
-        uses: actions/upload-artifact@v4
-        with:
-          name: toolchain-host_macosARM64-target_baremetalARM
-          overwrite: true
-          path: |
-            qmk_toolchain-gcc14.2.0-host_macosX64-target_baremetalARM.tar.zst
-
-      - name: Upload signed macOS X64-AVR toolchain
-        uses: actions/upload-artifact@v4
-        with:
-          name: toolchain-host_macosARM64-target_baremetalAVR
-          overwrite: true
-          path: |
-            qmk_toolchain-gcc14.2.0-host_macosX64-target_baremetalAVR.tar.zst
-
-      - name: Upload signed macOS X64-RV32 toolchain
-        uses: actions/upload-artifact@v4
-        with:
-          name: toolchain-host_macosARM64-target_baremetalRV32
-          overwrite: true
-          path: |
-            qmk_toolchain-gcc14.2.0-host_macosX64-target_baremetalRV32.tar.zst
-
   strip-and-repack-toolchains:
     name: Strip and repack toolchains
-    needs: [create-toolchains, temp-codesign-macos]
+    needs: [create-toolchains]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
