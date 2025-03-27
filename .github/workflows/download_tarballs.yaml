@@ -38,7 +38,8 @@ jobs:
         with:
           path: |
             tarballs.tar.zst
-          key: cache-tarballs-${{ inputs.state_name }}-${{ hashFiles('.github/workflows/**', '*.sh', 'Dockerfile*', 'common.bashinc') }}
+          #key: cache-tarballs-${{ inputs.state_name }}-${{ hashFiles('.github/workflows/**', '*.sh', 'Dockerfile*', 'common.bashinc') }}
+          key: cache-tarballs-${{ inputs.state_name }}-${{ hashFiles('*.sh', 'Dockerfile*', 'common.bashinc') }}
 
       - name: Gather source tarballs
         if: steps.cache.outputs.cache-hit != 'true'

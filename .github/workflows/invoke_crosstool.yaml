@@ -81,7 +81,8 @@ jobs:
             state.tar
             build_logs.tar.zst
             qmk_toolchain-gcc*-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}.tar.zst
-          key: cache-${{ inputs.crosstool_host_os }}-${{ inputs.build_host }}-${{ inputs.target_host }}${{ inputs.toolchain_suffix }}-phase${{ inputs.phase_number }}-${{ hashFiles('.github/workflows/**', '${{ inputs.build_script }}', 'Dockerfile*', 'common.bashinc') }}
+          #key: cache-${{ inputs.crosstool_host_os }}-${{ inputs.build_host }}-${{ inputs.target_host }}${{ inputs.toolchain_suffix }}-phase${{ inputs.phase_number }}-${{ hashFiles('.github/workflows/**', '${{ inputs.build_script }}', 'Dockerfile*', 'common.bashinc') }}
+          key: cache-${{ inputs.crosstool_host_os }}-${{ inputs.build_host }}-${{ inputs.target_host }}${{ inputs.toolchain_suffix }}-phase${{ inputs.phase_number }}-${{ hashFiles('${{ inputs.build_script }}', 'Dockerfile*', 'common.bashinc') }}
 
       - name: Look at all this space for activities
         run: |

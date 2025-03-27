@@ -18,5 +18,4 @@ build_one \
     --binutils-plugins \
     --extra-newlib-nano \
     --no-cross-gdb-python \
-    --static-toolchain \
     "$@"
