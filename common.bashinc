@@ -141,7 +141,7 @@ function build_one_args() {
 --libc=<flavour>        -- Overrides the C library to build. Usually 'picolibc', 'newlib', or 'none'. (optional)
 --extra-newlib-nano     -- Builds newlib-nano in addition to the usual C library (optional)
 --extra-picolibc        -- Builds picolibc in addition to the usual C library (optional)
---static-toolchain      -- Builds the toolchain such that it's statically linked (optional)
+--static-toolchain      -- Builds the toolchain such that it's statically linked (currently broken, skipped) (optional)
 --multilib-list=<value> -- Overrides the list of multilib targets generated. Sets \$CT_CC_GCC_MULTILIB_LIST. (optional)
 --tools-prefix=<value>  -- Override the build toolchain. For example \`x86_64-unknown-linux-gnu-\`, with the trailing slash. \`gcc\` et.al. will be appended. (optional)
 --dir-suffix=<value>    -- Appends a suffix to the toolchain output directory. (optional)
@@ -308,11 +308,11 @@ function build_one() {
 
     # Link the toolchain statically if requested
     if [[ ! -z "${static_toolchain:-}" ]]; then
-        ${SED} -i \
-            -e 's/^.*CT_STATIC_TOOLCHAIN.*$/CT_STATIC_TOOLCHAIN=y/' \
-            -e 's/^.*CT_WANTS_STATIC_LINK.*$/CT_WANTS_STATIC_LINK=y/' \
-            -e 's/^.*CT_WANTS_STATIC_LINK_CXX.*$/CT_WANTS_STATIC_LINK_CXX=y/' \
-            .config
+        # ${SED} -i \
+        #     -e 's/^.*CT_STATIC_TOOLCHAIN.*$/CT_STATIC_TOOLCHAIN=y/' \
+        #     -e 's/^.*CT_WANTS_STATIC_LINK.*$/CT_WANTS_STATIC_LINK=y/' \
+        #     -e 's/^.*CT_WANTS_STATIC_LINK_CXX.*$/CT_WANTS_STATIC_LINK_CXX=y/' \
+        #     .config
         ct-ng olddefconfig
     fi
 
