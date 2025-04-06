@@ -291,8 +291,14 @@ function build_one() {
             -e 's/^.*CT_GCC_later_than_.*$/# CT_GCC_later_than_???? is not set/' \
             -e 's/^.*CT_GCC_older_than_.*$/# CT_GCC_older_than_???? is not set/' \
             .config
-        echo "CT_GCC_V_7=y" >>.config
-        echo "CT_GCC_VERSION=\"7.5.0\"" >>.config
+
+        if [[ ! -z "$(echo $sample_name | grep riscv64-unknown-linux-gnu)" ]]; then
+            echo "CT_GCC_V_9=y" >>.config
+            echo "CT_GCC_VERSION=\"9.5.0\"" >>.config
+        else
+            echo "CT_GCC_V_7=y" >>.config
+            echo "CT_GCC_VERSION=\"7.5.0\"" >>.config
+        fi
 
         ct_ng_olddefconfig
 
@@ -316,7 +322,6 @@ function build_one() {
     echo 'CT_GMP_VERSION="6.1.2"' >>.config
 
     ct_ng_olddefconfig
-
 
     # Swap to an older version of Linux (LTS) and glibc to avoid execution issues with older distros, especially things like older Debian with Raspberry Pi targets.
     if [[ ! -z "$(echo $sample_name | grep riscv64-unknown-linux-gnu)" ]]; then
@@ -459,9 +464,15 @@ function build_one() {
         ${SED} -i \
             -e 's/^.*CT_GLIBC_V_.*$/# CT_GLIBC_V_???? is not set/' \
             .config
-        echo "CT_GLIBC_V_2_28=y" >>.config
-        echo "CT_GLIBC_OLDEST_ABI=\"2.28\"" >>.config
-        echo "CT_CC_GCC_EXTRA_CONFIG_ARRAY=\"--with-glibc-version=2.28\"" >>.config
+        if [[ ! -z "$(echo $sample_name | grep riscv64-unknown-linux-gnu)" ]]; then
+            echo "CT_GLIBC_V_2_29=y" >>.config
+            echo "CT_GLIBC_OLDEST_ABI=\"2.29\"" >>.config
+            echo "CT_CC_GCC_EXTRA_CONFIG_ARRAY=\"--with-glibc-version=2.29\"" >>.config
+        else
+            echo "CT_GLIBC_V_2_28=y" >>.config
+            echo "CT_GLIBC_OLDEST_ABI=\"2.28\"" >>.config
+            echo "CT_CC_GCC_EXTRA_CONFIG_ARRAY=\"--with-glibc-version=2.28\"" >>.config
+        fi
         ct_ng_olddefconfig
     fi
 
