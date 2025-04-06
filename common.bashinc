@@ -308,11 +308,11 @@ function build_one() {
 
     # Link the toolchain statically if requested
     if [[ ! -z "${static_toolchain:-}" ]]; then
-        # ${SED} -i \
-        #     -e 's/^.*CT_STATIC_TOOLCHAIN.*$/CT_STATIC_TOOLCHAIN=y/' \
-        #     -e 's/^.*CT_WANTS_STATIC_LINK.*$/CT_WANTS_STATIC_LINK=y/' \
-        #     -e 's/^.*CT_WANTS_STATIC_LINK_CXX.*$/CT_WANTS_STATIC_LINK_CXX=y/' \
-        #     .config
+        ${SED} -i \
+            -e 's/^.*CT_STATIC_TOOLCHAIN.*$/CT_STATIC_TOOLCHAIN=y/' \
+            -e 's/^.*CT_WANTS_STATIC_LINK.*$/CT_WANTS_STATIC_LINK=y/' \
+            -e 's/^.*CT_WANTS_STATIC_LINK_CXX.*$/CT_WANTS_STATIC_LINK_CXX=y/' \
+            .config
         ct-ng olddefconfig
     fi
 
