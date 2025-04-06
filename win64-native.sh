@@ -15,6 +15,7 @@ if [[ $(uname -s) == "Linux" ]]; then
 fi
 
 build_one \
+    --build-host-compile \
     --sample-name=x86_64-w64-mingw32 \
     --no-cross-gdb-python \
     ${extra_args:-} \

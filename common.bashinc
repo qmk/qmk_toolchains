@@ -136,6 +136,7 @@ function build_one_args() {
 --build-target=<target> -- Which ct-ng build target to execute, default is 'build' (optional)
 --sample-name=<sample>  -- Seeds the crosstool-ng build with the sample configuration (required)
 --vendor-name=<vendor>  -- Overrides the vendor previously supplied by the sample (optional)
+--build-host-compile    -- Builds the toolchains targeting an older version of gcc for later version compatibility (optional)
 --canadian-host=<host>  -- The intended final host machine that the toolchain will be executed (optional)
 --no-cross-gdb-python   -- Disabled python when building cross-gdb for canadian builds (optional)
 --libc=<flavour>        -- Overrides the C library to build. Usually 'picolibc', 'newlib', or 'none'. (optional)
@@ -260,6 +261,29 @@ function build_one() {
 
     ct_ng_olddefconfig
 
+    # Builder older versions of the toolchain when we're building the base cross-compilers
+    if [[ ! -z "${build_host_compile:-}" ]]; then
+        ${SED} -i \
+            -e 's/^.*CT_GCC_V_.*$/# CT_GCC_V_???? is not set/' \
+            -e 's/^.*CT_GCC_VERSION.*$/# CT_GCC_VERSION is not set/' \
+            -e 's/^.*CT_GCC_.*_or_later$/# CT_GCC_????_or_later is not set/' \
+            -e 's/^.*CT_GCC_REQUIRE_.*_or_later$/# CT_GCC_REQUIRE_????_or_later is not set/' \
+            -e 's/^.*CT_GCC_.*_or_older.*$/# CT_GCC_V_????_or_older is not set/' \
+            -e 's/^.*CT_GCC_.*_or_later.*$/# CT_GCC_V_????_or_later is not set/' \
+            -e 's/^.*CT_GCC_later_than_.*$/# CT_GCC_later_than_???? is not set/' \
+            -e 's/^.*CT_GCC_older_than_.*$/# CT_GCC_older_than_???? is not set/' \
+            .config
+        echo "CT_GCC_V_10=y" >>.config
+        echo "CT_GCC_VERSION=\"10.5.0\"" >>.config
+        ${SED} -i \
+            -e 's/^.*CT_MINGW_W64_V_.*$/# CT_MINGW_W64_V_???? is not set/' \
+            -e 's/^.*CT_MINGW_W64_VERSION.*$/# CT_MINGW_W64_VERSION is not set/' \
+            .config
+        echo "CT_MINGW_W64_V_V10_0=y" >>.config
+        echo "CT_MINGW_W64_VERSION=\"v10.0.0\"" >>.config
+    fi
+
+    ct-ng olddefconfig
     # Disable the progress bar and other unnecessary features, zstd support was broken last time it was checked
     ${SED} -i \
         -e '/CT_LOG_PROGRESS_BAR/s/y$/n/' \
@@ -277,15 +301,28 @@ function build_one() {
     echo 'CT_GDB_CROSS_EXTRA_CONFIG_ARRAY="--disable-tui"' >>.config # see https://github.com/crosstool-ng/crosstool-ng/issues/321
 
     # Swap to an older version of Linux (LTS) and glibc to avoid execution issues with older distros, especially things like older Debian with Raspberry Pi targets.
-    ${SED} -i \
-        -e 's/^.*CT_LINUX_V_.*$/# CT_LINUX_V_???? is not set/' \
-        -e 's/^.*CT_LINUX_VERSION.*$/CT_LINUX_VERSION="5.10"/' \
-        -e 's/^.*CT_GLIBC_MIN_KERNEL.*$/CT_GLIBC_MIN_KERNEL="5.10"/' \
-        .config
-    echo CT_LINUX_V_5_10=y >>.config
-    echo unset CT_GLIBC_KERNEL_VERSION_NONE >>.config
-    echo CT_GLIBC_KERNEL_VERSION_AS_HEADERS=y >>.config
-    echo CT_GLIBC_MIN_KERNEL="\${CT_LINUX_VERSION}" >>.config
+    if [[ ! -z "$(echo $sample_name | grep riscv64-unknown-linux-gnu)" ]]; then
+        # rv64 needs a slightly newer kernel
+        ${SED} -i \
+            -e 's/^.*CT_LINUX_V_.*$/# CT_LINUX_V_???? is not set/' \
+            -e 's/^.*CT_LINUX_VERSION.*$/CT_LINUX_VERSION="5.10"/' \
+            -e 's/^.*CT_GLIBC_MIN_KERNEL.*$/CT_GLIBC_MIN_KERNEL="5.10"/' \
+            .config
+        echo CT_LINUX_V_5_10=y >>.config
+        echo unset CT_GLIBC_KERNEL_VERSION_NONE >>.config
+        echo CT_GLIBC_KERNEL_VERSION_AS_HEADERS=y >>.config
+        echo CT_GLIBC_MIN_KERNEL="\${CT_LINUX_VERSION}" >>.config
+    else
+        ${SED} -i \
+            -e 's/^.*CT_LINUX_V_.*$/# CT_LINUX_V_???? is not set/' \
+            -e 's/^.*CT_LINUX_VERSION.*$/CT_LINUX_VERSION="4.19"/' \
+            -e 's/^.*CT_GLIBC_MIN_KERNEL.*$/CT_GLIBC_MIN_KERNEL="4.19"/' \
+            .config
+        echo CT_LINUX_V_4_19=y >>.config
+        echo unset CT_GLIBC_KERNEL_VERSION_NONE >>.config
+        echo CT_GLIBC_KERNEL_VERSION_AS_HEADERS=y >>.config
+        echo CT_GLIBC_MIN_KERNEL="\${CT_LINUX_VERSION}" >>.config
+    fi
 
     ct_ng_olddefconfig
 
@@ -308,12 +345,12 @@ function build_one() {
 
     # Link the toolchain statically if requested
     if [[ ! -z "${static_toolchain:-}" ]]; then
-        ${SED} -i \
-            -e 's/^.*CT_STATIC_TOOLCHAIN.*$/CT_STATIC_TOOLCHAIN=y/' \
-            -e 's/^.*CT_WANTS_STATIC_LINK.*$/CT_WANTS_STATIC_LINK=y/' \
-            -e 's/^.*CT_WANTS_STATIC_LINK_CXX.*$/CT_WANTS_STATIC_LINK_CXX=y/' \
-            .config
-        ct-ng olddefconfig
+        # ${SED} -i \
+        #     -e 's/^.*CT_STATIC_TOOLCHAIN.*$/CT_STATIC_TOOLCHAIN=y/' \
+        #     -e 's/^.*CT_WANTS_STATIC_LINK.*$/CT_WANTS_STATIC_LINK=y/' \
+        #     -e 's/^.*CT_WANTS_STATIC_LINK_CXX.*$/CT_WANTS_STATIC_LINK_CXX=y/' \
+        #     .config
+        ct_ng_olddefconfig
     fi
 
     # Configure the required C library

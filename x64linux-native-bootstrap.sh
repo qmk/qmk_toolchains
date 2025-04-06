@@ -11,6 +11,7 @@ build_one_help "$@"
 respawn_docker_if_needed --container-image=ghcr.io/tzarc/qmk_toolchains:base "$@"
 
 build_one \
+    --build-host-compile \
     --sample-name=x86_64-unknown-linux-gnu \
     --vendor-name=qmk_bootstrap \
     --dir-suffix=_qmk_bootstrap \

@@ -15,6 +15,7 @@ if [[ $(uname -s) == "Linux" ]]; then
 fi
 
 build_one \
+    --build-host-compile \
     --sample-name=aarch64-rpi3-linux-gnu \
     --vendor-name=unknown \
     --no-cross-gdb-python \

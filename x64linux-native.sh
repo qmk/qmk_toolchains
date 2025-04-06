@@ -15,6 +15,7 @@ if [[ $(uname -s) == "Linux" ]]; then
 fi
 
 build_one \
+    --build-host-compile \
     --sample-name=x86_64-unknown-linux-gnu \
     --vendor-name=qmk \
     --no-cross-gdb-python \
