@@ -260,30 +260,6 @@ function build_one() {
     echo "CT_PARALLEL_JOBS=$(($(cpu_count) - 1))" >>.config
 
     ct_ng_olddefconfig
-
-    # Builder older versions of the toolchain when we're building the base cross-compilers
-    if [[ ! -z "${build_host_compile:-}" ]]; then
-        ${SED} -i \
-            -e 's/^.*CT_GCC_V_.*$/# CT_GCC_V_???? is not set/' \
-            -e 's/^.*CT_GCC_VERSION.*$/# CT_GCC_VERSION is not set/' \
-            -e 's/^.*CT_GCC_.*_or_later$/# CT_GCC_????_or_later is not set/' \
-            -e 's/^.*CT_GCC_REQUIRE_.*_or_later$/# CT_GCC_REQUIRE_????_or_later is not set/' \
-            -e 's/^.*CT_GCC_.*_or_older.*$/# CT_GCC_V_????_or_older is not set/' \
-            -e 's/^.*CT_GCC_.*_or_later.*$/# CT_GCC_V_????_or_later is not set/' \
-            -e 's/^.*CT_GCC_later_than_.*$/# CT_GCC_later_than_???? is not set/' \
-            -e 's/^.*CT_GCC_older_than_.*$/# CT_GCC_older_than_???? is not set/' \
-            .config
-        echo "CT_GCC_V_10=y" >>.config
-        echo "CT_GCC_VERSION=\"10.5.0\"" >>.config
-        ${SED} -i \
-            -e 's/^.*CT_MINGW_W64_V_.*$/# CT_MINGW_W64_V_???? is not set/' \
-            -e 's/^.*CT_MINGW_W64_VERSION.*$/# CT_MINGW_W64_VERSION is not set/' \
-            .config
-        echo "CT_MINGW_W64_V_V10_0=y" >>.config
-        echo "CT_MINGW_W64_VERSION=\"v10.0.0\"" >>.config
-    fi
-
-    ct-ng olddefconfig
     # Disable the progress bar and other unnecessary features, zstd support was broken last time it was checked
     ${SED} -i \
         -e '/CT_LOG_PROGRESS_BAR/s/y$/n/' \
@@ -299,6 +275,48 @@ function build_one() {
 
     # GDB's TUI causes issues with the build, so disable it.
     echo 'CT_GDB_CROSS_EXTRA_CONFIG_ARRAY="--disable-tui"' >>.config # see https://github.com/crosstool-ng/crosstool-ng/issues/321
+
+    # Builder older versions of the toolchain when we're building the base cross-compilers
+    if [[ ! -z "${build_host_compile:-}" ]]; then
+        # Don't need gdb for the host builds
+        echo 'CT_DEBUG_GDB=n' >>.config
+
+        ${SED} -i \
+            -e 's/^.*CT_GCC_V_.*$/# CT_GCC_V_???? is not set/' \
+            -e 's/^.*CT_GCC_VERSION.*$/# CT_GCC_VERSION is not set/' \
+            -e 's/^.*CT_GCC_.*_or_later$/# CT_GCC_????_or_later is not set/' \
+            -e 's/^.*CT_GCC_REQUIRE_.*_or_later$/# CT_GCC_REQUIRE_????_or_later is not set/' \
+            -e 's/^.*CT_GCC_.*_or_older.*$/# CT_GCC_V_????_or_older is not set/' \
+            -e 's/^.*CT_GCC_.*_or_later.*$/# CT_GCC_V_????_or_later is not set/' \
+            -e 's/^.*CT_GCC_later_than_.*$/# CT_GCC_later_than_???? is not set/' \
+            -e 's/^.*CT_GCC_older_than_.*$/# CT_GCC_older_than_???? is not set/' \
+            .config
+        echo "CT_GCC_V_7=y" >>.config
+        echo "CT_GCC_VERSION=\"7.5.0\"" >>.config
+
+        ct_ng_olddefconfig
+
+        ${SED} -i \
+            -e 's/^.*CT_MINGW_W64_V_.*$/# CT_MINGW_W64_V_???? is not set/' \
+            -e 's/^.*CT_MINGW_W64_VERSION.*$/# CT_MINGW_W64_VERSION is not set/' \
+            .config
+        echo "CT_MINGW_W64_V_V10_0=y" >>.config
+        echo "CT_MINGW_W64_VERSION=\"v10.0.0\"" >>.config
+
+        ct_ng_olddefconfig
+    fi
+
+    ct_ng_olddefconfig
+
+    # Apparently an older version of GMP is required due to bootstrapping with older gcc
+    ${SED} -i \
+        -e 's/^.*CT_GMP_V_6.*$/# CT_GMP_V_6_???? is not set/' \
+        .config
+    echo 'CT_GMP_V_6_1=y' >>.config
+    echo 'CT_GMP_VERSION="6.1.2"' >>.config
+
+    ct_ng_olddefconfig
+
 
     # Swap to an older version of Linux (LTS) and glibc to avoid execution issues with older distros, especially things like older Debian with Raspberry Pi targets.
     if [[ ! -z "$(echo $sample_name | grep riscv64-unknown-linux-gnu)" ]]; then
