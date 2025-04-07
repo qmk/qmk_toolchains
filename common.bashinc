@@ -293,8 +293,8 @@ function build_one() {
             .config
 
         if [[ ! -z "$(echo $sample_name | grep riscv64-unknown-linux-gnu)" ]]; then
-            echo "CT_GCC_V_9=y" >>.config
-            echo "CT_GCC_VERSION=\"9.5.0\"" >>.config
+            echo "CT_GCC_V_10=y" >>.config
+            echo "CT_GCC_VERSION=\"10.5.0\"" >>.config
         else
             echo "CT_GCC_V_7=y" >>.config
             echo "CT_GCC_VERSION=\"7.5.0\"" >>.config
@@ -465,9 +465,9 @@ function build_one() {
             -e 's/^.*CT_GLIBC_V_.*$/# CT_GLIBC_V_???? is not set/' \
             .config
         if [[ ! -z "$(echo $sample_name | grep riscv64-unknown-linux-gnu)" ]]; then
-            echo "CT_GLIBC_V_2_29=y" >>.config
-            echo "CT_GLIBC_OLDEST_ABI=\"2.29\"" >>.config
-            echo "CT_CC_GCC_EXTRA_CONFIG_ARRAY=\"--with-glibc-version=2.29\"" >>.config
+            echo "CT_GLIBC_V_2_36=y" >>.config
+            echo "CT_GLIBC_OLDEST_ABI=\"2.36\"" >>.config
+            echo "CT_CC_GCC_EXTRA_CONFIG_ARRAY=\"--with-glibc-version=2.36\"" >>.config
         else
             echo "CT_GLIBC_V_2_28=y" >>.config
             echo "CT_GLIBC_OLDEST_ABI=\"2.28\"" >>.config
