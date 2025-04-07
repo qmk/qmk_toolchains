@@ -318,8 +318,8 @@ function build_one() {
     ${SED} -i \
         -e 's/^.*CT_GMP_V_6.*$/# CT_GMP_V_6_???? is not set/' \
         .config
-    echo 'CT_GMP_V_6_1=y' >>.config
-    echo 'CT_GMP_VERSION="6.1.2"' >>.config
+    echo 'CT_GMP_V_6_2=y' >>.config
+    echo 'CT_GMP_VERSION="6.2.1"' >>.config
 
     ct_ng_olddefconfig
 
