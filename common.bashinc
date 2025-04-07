@@ -147,6 +147,7 @@ function build_one_args() {
 --tools-prefix=<value>  -- Override the build toolchain. For example \`x86_64-unknown-linux-gnu-\`, with the trailing slash. \`gcc\` et.al. will be appended. (optional)
 --dir-suffix=<value>    -- Appends a suffix to the toolchain output directory. (optional)
 --container-image       -- Which container image to use.
+--no-keep-state         -- Don't save the state of the build. (optional)
 __EOT__
 }
 
@@ -486,9 +487,11 @@ function build_one() {
     echo "CT_DEBUG_CT=y" >>.config
     ct_ng_olddefconfig
 
-    # Save the build steps so that we can save/restore on GHA due to build execution time limits.
-    echo "CT_DEBUG_CT_SAVE_STEPS=y" >>.config
-    echo "CT_DEBUG_CT_SAVE_STEPS_GZIP=y" >>.config
+    if [[ -z "${no_keep_state:-}" ]]; then
+        # Save the build steps so that we can save/restore on GHA due to build execution time limits.
+        echo "CT_DEBUG_CT_SAVE_STEPS=y" >>.config
+        echo "CT_DEBUG_CT_SAVE_STEPS_GZIP=y" >>.config
+    fi
 
     # Set the toolchain version string
     echo "CT_TOOLCHAIN_PKGVERSION=\"qmk/qmk_toolchains @ $(git describe --always --dirty --exclude '*')\"" >>.config

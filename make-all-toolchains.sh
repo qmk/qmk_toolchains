@@ -43,7 +43,7 @@ for target in "${!target_prefixes[@]}"; do
         script="${prefix}-${suffix}"
         if [ ! -x "toolchains/host_${host}-target_${target}/bin/${check_file}" ] && [ ! -x "toolchains/host_${host}-target_${target}/bin/${check_file}.exe" ]; then
             echo "Missing toolchain for ${target} on ${host}, building..."
-            ./${script} --container-image=${BUILDER_IMAGE}
+            ./${script} --container-image=${BUILDER_IMAGE} --no-keep-state
         fi
     done
 done
