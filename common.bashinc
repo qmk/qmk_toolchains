@@ -296,8 +296,8 @@ function build_one() {
             echo "CT_GCC_V_10=y" >>.config
             echo "CT_GCC_VERSION=\"10.5.0\"" >>.config
         else
-            echo "CT_GCC_V_7=y" >>.config
-            echo "CT_GCC_VERSION=\"7.5.0\"" >>.config
+            echo "CT_GCC_V_8=y" >>.config
+            echo "CT_GCC_VERSION=\"8.5.0\"" >>.config
         fi
 
         ct_ng_olddefconfig
