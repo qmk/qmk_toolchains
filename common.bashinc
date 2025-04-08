@@ -535,7 +535,7 @@ function build_one() {
 
         if [ -n "${canadian_host:-}" ] && [ -n "$(echo $toolchain_dir | grep macos)" ]; then
             # Patch the `@rpath` of the toolchain binaries so that they look in `@executable_path/../lib` for libraries
-            find "$toolchain_dir/bin" -type f -executable -exec "${canadian_host}-install_name_tool" -add_rpath "@executable_path/../lib" '{}' \;
+            find "$toolchain_dir/bin" -type f -executable -exec "${canadian_host}-install_name_tool" -add_rpath "@executable_path/../lib" '{}' \; || true
             # Copy across libstdc++ for gdb
             cp /gcc/${canadian_host}/lib/libstdc++.6.dylib "$toolchain_dir/lib"
             # Codesign macOS executables
