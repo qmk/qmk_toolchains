@@ -524,13 +524,6 @@ function build_one() {
     echo '$PATH:'
     echo "$PATH" | tr ':' '\n'
 
-    # Clear out any temporary variables
-    hash -r
-    while read arg; do
-        unset $arg
-    done < <(build_one_args | ${SED} -e 's@\s\+--.*@@g' -e 's@^--@@g' -e 's@-@_@g' -e 's@=.*@@g')
-    unset arg
-
     if [[ ${#positional_args[@]} -eq 0 ]]; then
         positional_args+=(build)
     fi
@@ -540,9 +533,13 @@ function build_one() {
     else
         nice -n 10 ionice -c 3 ct-ng ${positional_args[@]}
 
-        # Sign macOS executables
-        if [ -n "$(echo $toolchain_dir | grep macos)" ]; then
-            find $toolchain_dir -type f -executable -print -exec rcodesign sign '{}' \; || true
+        if [ -n "${canadian_host:-}" ] && [ -n "$(echo $toolchain_dir | grep macos)" ]; then
+            # Patch the `@rpath` of the toolchain binaries so that they look in `@executable_path/../lib` for libraries
+            find "$toolchain_dir/bin" -type f -executable -exec "${canadian_host}-install_name_tool" -add_rpath "@executable_path/../lib" '{}' \;
+            # Copy across libstdc++ for gdb
+            cp /gcc/${canadian_host}/lib/libstdc++.6.dylib "$toolchain_dir/lib"
+            # Codesign macOS executables
+            find "$toolchain_dir" -type f -executable -print -exec rcodesign sign '{}' \; || true
         fi
     fi
 }
