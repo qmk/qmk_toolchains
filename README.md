@@ -2,7 +2,7 @@
 
 Builds of baremetal cross-compilation `*-gcc` primarily for QMK Firmware use.
 
-Currently provides GCC 14.2.0, for the following baremetal targets:
+Currently provides GCC 15.1.0, for the following baremetal targets:
 
 * `arm-none-eabi`
 * `avr`
