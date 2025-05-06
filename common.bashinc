@@ -14,8 +14,10 @@ function respawn_docker_if_needed() {
     if [[ "$(uname -s)" == "Linux" ]] && [[ -n "${EXECUTE_UNDER_DOCKER:-}" ]]; then
         eval "$(parse_args "$@")"
         [ -n "${container_image:-}" ] || container_image='ghcr.io/tzarc/qmk_toolchains:builder'
+        [ -n "${interactive:-}" ] && interactive='-it' || interactive=''
         cd "$script_dir"
         docker run --rm \
+            ${interactive:-} \
             -v "$script_dir:$TC_WORKDIR" \
             -w "$TC_WORKDIR" \
             -e TC_WORKDIR="$TC_WORKDIR" \
@@ -148,6 +150,7 @@ function build_one_args() {
 --dir-suffix=<value>    -- Appends a suffix to the toolchain output directory. (optional)
 --container-image       -- Which container image to use.
 --no-keep-state         -- Don't save the state of the build. (optional)
+--interactive           -- Adds \`-it\` to the \`docker\` invocation. (optional)
 __EOT__
 }
 
@@ -259,6 +262,9 @@ function build_one() {
 
     # Don't go overboard with the parallel jobs
     echo "CT_PARALLEL_JOBS=$(($(cpu_count) + 1))" >>.config
+
+    # Pin binutils at 2.43 due to issues with ARM relocations: https://gcc.gnu.org/pipermail/gcc-help/2025-May/144169.html
+    echo 'CT_BINUTILS_V_2_43=y' >>.config
 
     ct_ng_olddefconfig
     # Disable the progress bar and other unnecessary features, zstd support was broken last time it was checked
