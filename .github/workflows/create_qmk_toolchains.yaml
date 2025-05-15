@@ -4,7 +4,7 @@ name: 2. (tzarc) Create QMK Toolchains
 on:
   workflow_dispatch:
   schedule:
-    - cron: "37 23 */6 * *" # every 6 days to keep cache
+    - cron: "37 11 */6 * *" # every 6 days to keep cache
 
 permissions:
   contents: write
