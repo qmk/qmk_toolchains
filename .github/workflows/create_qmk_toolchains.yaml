@@ -162,11 +162,6 @@ jobs:
       - name: Clone toolchains repo
         uses: actions/checkout@v4
 
-      - name: Delete tag
-        run: gh release delete latest --cleanup-tag || true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Download toolchains
         uses: actions/download-artifact@v4
         with:
