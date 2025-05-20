@@ -11,12 +11,10 @@ build_one_help "$@"
 respawn_docker_if_needed "$@"
 
 # Intentionally build as canadian (even though we're on the same architecture)
-# to ensure libraries in the toolchain are compatible with the target, as well
-# as static linking correctly works (and doesn't fail the build).
+# to ensure libraries in the toolchain are compatible with the target.
 build_one \
     --sample-name=avr \
     --canadian-host=x86_64-qmk-linux-gnu \
     --binutils-plugins \
     --no-cross-gdb-python \
-    --static-toolchain \
     "$@"

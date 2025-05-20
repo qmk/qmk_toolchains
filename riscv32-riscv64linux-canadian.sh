@@ -16,5 +16,4 @@ build_one \
     --canadian-host=riscv64-unknown-linux-gnu \
     --binutils-plugins \
     --no-cross-gdb-python \
-    --static-toolchain \
     "$@"
