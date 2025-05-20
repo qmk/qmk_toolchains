@@ -549,6 +549,7 @@ function build_one() {
         fi
 
         # Save identifying information
+        [ -d "$toolchain_dir/etc" ] || mkdir -p "$toolchain_dir/etc"
         echo "TOOLCHAIN_HOST=${name_host}" >"$toolchain_dir/etc/toolchain_release_${name_host}_${name_target}"
         echo "TOOLCHAIN_TARGET=${name_target}" >>"$toolchain_dir/etc/toolchain_release_${name_host}_${name_target}"
         echo "COMMIT_DATE=$(date -u -d "$(git show --no-patch --format=%cI HEAD)" +%Y-%m-%dT%H:%M:%SZ)" >>"$toolchain_dir/etc/toolchain_release_${name_host}_${name_target}"
