@@ -41,7 +41,7 @@ for target in "${target_names[@]}"; do
         script="host_${host}-target_${target}.sh"
         if [ ! -x "toolchains/host_${host}-target_${target}/bin/${check_file}" ] && [ ! -x "toolchains/host_${host}-target_${target}/bin/${check_file}.exe" ]; then
             echo "Missing toolchain for ${target} on ${host}, building..."
-            ./${script} --container-image=${BUILDER_IMAGE} --no-keep-state
+            ./${script} --container-image=${BUILDER_IMAGE} --no-keep-state "$@"
         fi
     done
 done

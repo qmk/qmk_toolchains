@@ -6,3 +6,5 @@ qmk_toolchain*
 flashing/*
 !flashing/*.sh
 !flashing/support
+
+/*.config

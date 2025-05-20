@@ -512,7 +512,7 @@ function build_one() {
     # Add the other compilers to the PATH for use in canadian builds
     while read bindir; do
         export PATH="$bindir:$PATH"
-    done < <(find "$script_dir/toolchains/host_$(fn_os_arch)"* -maxdepth 1 -type d -name bin)
+    done < <(find "$script_dir/toolchains/host_$(fn_os_arch)"* -maxdepth 1 -type d -name bin || true)
     unset bindir
 
     # Dump out the resulting path
@@ -532,7 +532,7 @@ function build_one() {
             # Patch the `@rpath` of the toolchain binaries so that they look in `@executable_path/../lib` for libraries
             find "$toolchain_dir/bin" -type f -executable -exec "${canadian_host}-install_name_tool" -add_rpath "@executable_path/../lib" '{}' \; || true
             # Copy across libstdc++ for gdb
-            cp /gcc/${canadian_host}/lib/libstdc++.6.dylib "$toolchain_dir/lib"
+            cp /gcc/${canadian_host}/lib/libstdc++.6.dylib "$toolchain_dir/lib" || true
             # Codesign macOS executables
             find "$toolchain_dir" -type f -executable -print -exec rcodesign sign '{}' \; || true
         fi
