@@ -81,7 +81,7 @@ jobs:
       crosstool_host_os: linuxX64
       build_host: linuxX64
       target_host: linuxX64
-      build_script: x64linux-native-bootstrap.sh
+      build_script: host_linuxX64-target_linuxX64_qmk_bootstrap.sh
       fetch_bootstrap: false
       toolchain_suffix: "_qmk_bootstrap"
 
@@ -94,21 +94,12 @@ jobs:
       fail-fast: false
       matrix:
         target_host: [linuxX64, linuxARM64, linuxRV64, windowsX64]
-        include:
-          - target_host: linuxX64
-            build_script: x64linux-native.sh
-          - target_host: linuxARM64
-            build_script: aarch64linux-native.sh
-          - target_host: linuxRV64
-            build_script: riscv64linux-native.sh
-          - target_host: windowsX64
-            build_script: win64-native.sh
     uses: ./.github/workflows/create_one_toolchain.yaml
     with:
       crosstool_host_os: linuxX64
       build_host: linuxX64
       target_host: ${{ matrix.target_host }}
-      build_script: ${{ matrix.build_script }}
+      build_script: host_linuxX64-target_${{ matrix.target_host }}.sh
 
   # Overall builder container
   builder-container:
@@ -120,25 +111,11 @@ jobs:
       - name: Clone toolchains repo
         uses: actions/checkout@v4
 
-      - name: Download X64 toolchain
+      - name: Download toolchains
         uses: actions/download-artifact@v4
         with:
-          name: toolchain-host_linuxX64-target_linuxX64
-
-      - name: Download ARM64 toolchain
-        uses: actions/download-artifact@v4
-        with:
-          name: toolchain-host_linuxX64-target_linuxARM64
-
-      - name: Download RV64 toolchain
-        uses: actions/download-artifact@v4
-        with:
-          name: toolchain-host_linuxX64-target_linuxRV64
-
-      - name: Download Win64 toolchain
-        uses: actions/download-artifact@v4
-        with:
-          name: toolchain-host_linuxX64-target_windowsX64
+          merge-multiple: true
+          pattern: toolchain-host_linuxX64-target_*
 
       - name: List directory
         run: |

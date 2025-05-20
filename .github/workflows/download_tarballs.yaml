@@ -47,7 +47,7 @@ jobs:
           set -x
           ./download_tarballs.sh
           # Clear out the tools prefix so we can run everything, even without a bootstrap compiler present
-          for f in $(ls -1 *.sh | grep -E '(native|canadian)'); do
+          for f in $(ls -1 *.sh | grep -E 'target_'); do
             ./$f --tools-prefix= source --container-image=${{ inputs.container_name }}
           done
           tar acvf tarballs.tar.zst tarballs

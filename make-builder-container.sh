@@ -12,11 +12,11 @@ BASE_IMAGE=${BASE_IMAGE:-qmk_toolchains:base}
 BUILDER_IMAGE=${BUILDER_IMAGE:-qmk_toolchains:builder}
 
 declare -A target_scripts=(
-    [linuxX64_qmk_bootstrap]='x64linux-native-bootstrap.sh'
-    [linuxX64]='x64linux-native.sh'
-    [linuxARM64]='aarch64linux-native.sh'
-    [linuxRV64]='riscv64linux-native.sh'
-    [windowsX64]='win64-native.sh'
+    [linuxX64_qmk_bootstrap]='host_linuxX64-target_linuxX64_qmk_bootstrap.sh'
+    [linuxX64]='host_linuxX64-target_linuxX64.sh'
+    [linuxARM64]='host_linuxX64-target_linuxARM64.sh'
+    [linuxRV64]='host_linuxX64-target_linuxRV64.sh'
+    [windowsX64]='host_linuxX64-target_windowsX64.sh'
 )
 
 # Use gdb as it's the last step in the toolchain

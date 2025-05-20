@@ -32,38 +32,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        build_host:
-          [linuxX64, linuxARM64, linuxRV64, windowsX64, macosX64, macosARM64]
-        target_arch: [ARM, AVR, RV32]
-        include:
-          - target_arch: ARM
-            target_host: baremetalARM
-            build_script_prefix: arm
-          - target_arch: AVR
-            target_host: baremetalAVR
-            build_script_prefix: avr
-          - target_arch: RV32
-            target_host: baremetalRV32
-            build_script_prefix: riscv32
-          - build_host: linuxX64
-            build_script_suffix: x64linux-canadian
-          - build_host: linuxARM64
-            build_script_suffix: aarch64linux-canadian
-          - build_host: linuxRV64
-            build_script_suffix: riscv64linux-canadian
-          - build_host: windowsX64
-            build_script_suffix: win64-canadian
-          - build_host: macosX64
-            build_script_suffix: x64macos-canadian
-          - build_host: macosARM64
-            build_script_suffix: aarch64macos-canadian
+        build_host: [linuxX64, linuxARM64, linuxRV64, windowsX64, macosX64, macosARM64]
+        target_host: [baremetalARM, baremetalAVR, baremetalRV32]
 
     uses: ./.github/workflows/create_one_toolchain.yaml
     with:
       crosstool_host_os: linuxX64
       build_host: ${{ matrix.build_host }}
       target_host: ${{ matrix.target_host }}
-      build_script: ${{ matrix.build_script_prefix }}-${{ matrix.build_script_suffix }}.sh
+      build_script: host_${{ matrix.build_host }}-target_${{ matrix.target_host }}.sh
       fetch_bootstrap: false
 
   strip-and-repack-toolchains:

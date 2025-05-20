@@ -13,10 +13,19 @@ BUILDER_IMAGE=${BUILDER_IMAGE:-qmk_toolchains:builder}
 
 respawn_docker_if_needed --container-image=${BUILDER_IMAGE} "$@"
 
-declare -A target_prefixes=(
-    [baremetalARM]='arm'
-    [baremetalAVR]='avr'
-    [baremetalRV32]='riscv32'
+declare host_osarch_names=(
+    linuxX64
+    linuxARM64
+    linuxRV64
+    macosARM64
+    macosX64
+    windowsX64
+)
+
+declare target_names=(
+    baremetalARM
+    baremetalAVR
+    baremetalRV32
 )
 
 # Use gdb as it's the last step in the toolchain
@@ -26,21 +35,10 @@ declare -A check_files=(
     [baremetalRV32]='riscv32-unknown-elf-gdb'
 )
 
-declare -A host_suffixes=(
-    [linuxX64]='x64linux-canadian.sh'
-    [linuxARM64]='aarch64linux-canadian.sh'
-    [linuxRV64]='riscv64linux-canadian.sh'
-    [macosARM64]='aarch64macos-canadian.sh'
-    [macosX64]='x64macos-canadian.sh'
-    [windowsX64]='win64-canadian.sh'
-)
-
-for target in "${!target_prefixes[@]}"; do
-    prefix=${target_prefixes[$target]}
-    for host in "${!host_suffixes[@]}"; do
+for target in "${target_names[@]}"; do
+    for host in "${host_osarch_names[@]}"; do
         check_file=${check_files[$target]}
-        suffix=${host_suffixes[$host]}
-        script="${prefix}-${suffix}"
+        script="host_${host}-target_${target}.sh"
         if [ ! -x "toolchains/host_${host}-target_${target}/bin/${check_file}" ] && [ ! -x "toolchains/host_${host}-target_${target}/bin/${check_file}.exe" ]; then
             echo "Missing toolchain for ${target} on ${host}, building..."
             ./${script} --container-image=${BUILDER_IMAGE} --no-keep-state
@@ -48,8 +46,8 @@ for target in "${!target_prefixes[@]}"; do
     done
 done
 
-for target in "${!target_prefixes[@]}"; do
-    for host in "${!host_suffixes[@]}"; do
+for target in "${target_names[@]}"; do
+    for host in "${host_osarch_names[@]}"; do
         check_file=${check_files[$target]}
         if [ -x "toolchains/host_${host}-target_${target}/bin/${check_file}" ] || [ -x "toolchains/host_${host}-target_${target}/bin/${check_file}.exe" ]; then
             echo "Stripping toolchain for ${target} on ${host}..."
