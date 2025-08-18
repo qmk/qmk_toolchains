@@ -9,7 +9,7 @@ script_dir=$(dirname "${this_script}")
 cd "$script_dir"
 source "${script_dir}/common.bashinc"
 
-BUILDER_IMAGE=${BUILDER_IMAGE:-qmk_toolchains:builder}
+BUILDER_IMAGE=${BUILDER_IMAGE:-ghcr.io/tzarc/qmk_toolchains:builder}
 
 respawn_docker_if_needed --container-image=${BUILDER_IMAGE} "$@"
 
