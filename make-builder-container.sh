@@ -8,8 +8,8 @@ this_script="$PWD/$(basename ${BASH_SOURCE[0]})"
 script_dir=$(dirname "${this_script}")
 cd "$script_dir"
 
-BASE_IMAGE=${BASE_IMAGE:-qmk_toolchains:base}
-BUILDER_IMAGE=${BUILDER_IMAGE:-qmk_toolchains:builder}
+BASE_IMAGE=${BASE_IMAGE:-ghcr.io/tzarc/qmk_toolchains:base}
+BUILDER_IMAGE=${BUILDER_IMAGE:-ghcr.io/tzarc/qmk_toolchains:builder}
 
 declare -A target_scripts=(
     [linuxX64_qmk_bootstrap]='host_linuxX64-target_linuxX64_qmk_bootstrap.sh'
@@ -28,7 +28,7 @@ declare -A check_files=(
     [windowsX64]=x86_64-w64-mingw32-gdb
 )
 
-docker build -t qmk_toolchains:base -f Dockerfile.base .
+docker build -t ghcr.io/tzarc/qmk_toolchains:base -f Dockerfile.base .
 
 for target in "${!target_scripts[@]}"; do
     script=${target_scripts[$target]}

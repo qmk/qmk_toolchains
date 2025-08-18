@@ -5,10 +5,10 @@ ARG OSX_SDK_URL="https://github.com/joseluisq/macosx-sdks/releases/download/15.0
 
 ARG OSX_CROSS_COMMIT="29fe6dd35522073c9df5800f8cd1feb4b9a993a8"
 
-ARG CROSSTOOL_REPO_REF="d46ae2bc929fe8da2c26f8444c5f8aeb4f466e62"
+ARG CROSSTOOL_REPO_REF="7f9d7043cc3f39bbcd0e197fff0142c383a5b751"
 
 # Get the macOS SDK
-FROM --platform=$BUILDPLATFORM alpine:${ALPINE_VERSION} AS sdk
+FROM --platform=amd64 alpine:${ALPINE_VERSION} AS sdk
 RUN apk --update --no-cache add ca-certificates curl tar xz
 ARG OSX_SDK
 ARG OSX_SDK_URL
@@ -16,7 +16,7 @@ RUN curl -sSL "$OSX_SDK_URL" -o "/$OSX_SDK.tar.xz"
 RUN mkdir /osxsdk && tar -xf "/$OSX_SDK.tar.xz" -C "/osxsdk"
 
 # Get the osxcross source
-FROM --platform=$BUILDPLATFORM alpine:${ALPINE_VERSION} AS osxcross-src
+FROM --platform=amd64 alpine:${ALPINE_VERSION} AS osxcross-src
 RUN apk --update --no-cache add patch
 WORKDIR /osxcross
 ARG OSX_CROSS_COMMIT
