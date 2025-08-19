@@ -28,7 +28,7 @@ declare -A check_files=(
     [windowsX64]=x86_64-w64-mingw32-gdb
 )
 
-docker build -t ghcr.io/tzarc/qmk_toolchains:base -f Dockerfile.base .
+docker build -t ${BASE_IMAGE} -f Dockerfile.base .
 
 for target in "${!target_scripts[@]}"; do
     script=${target_scripts[$target]}

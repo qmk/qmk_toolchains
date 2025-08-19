@@ -262,9 +262,6 @@ function build_one() {
     # Don't go overboard with the parallel jobs
     echo "CT_PARALLEL_JOBS=$(($(cpu_count) - 1))" >>.config
 
-    # Pin binutils at 2.43 due to issues with ARM relocations: https://gcc.gnu.org/pipermail/gcc-help/2025-May/144169.html
-    echo 'CT_BINUTILS_V_2_43=y' >>.config
-
     ct_ng_olddefconfig
     # Disable the progress bar and other unnecessary features, zstd support was broken last time it was checked
     ${SED} -i \
@@ -281,6 +278,11 @@ function build_one() {
 
     # GDB's TUI causes issues with the build, so disable it.
     echo 'CT_GDB_CROSS_EXTRA_CONFIG_ARRAY="--disable-tui"' >>.config # see https://github.com/crosstool-ng/crosstool-ng/issues/321
+
+    # For target toolchains, pin binutils at 2.43 due to issues with ARM relocations (ChibiOS-Contrib): https://gcc.gnu.org/pipermail/gcc-help/2025-May/144169.html
+    if [[ -z "${build_host_compile:-}" ]]; then
+        echo 'CT_BINUTILS_V_2_43=y' >>.config
+    fi
 
     # Builder older versions of the toolchain when we're building the base cross-compilers
     if [[ ! -z "${build_host_compile:-}" ]]; then
