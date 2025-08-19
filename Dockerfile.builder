@@ -6,7 +6,7 @@ FROM ubuntu:noble AS extractor
 ARG RCODESIGN_VERSION
 
 RUN apt-get update && apt-get install -y curl xz-utils zstd
-COPY qmk_toolchain*.tar.zst /tmp
+COPY qmk_toolchain*.tar.zst /tmp/
 RUN mkdir -p /qmk/bin && ls -1 /tmp/qmk_toolchain*.tar.zst \
     | grep -P 'target_(linux|windows)' \
     | grep -v 'bootstrap' \

@@ -17,29 +17,17 @@ RUN mkdir /osxsdk && tar -xf "/$OSX_SDK.tar.xz" -C "/osxsdk"
 
 # Get the osxcross source
 FROM --platform=amd64 alpine:${ALPINE_VERSION} AS osxcross-src
-RUN apk --update --no-cache add patch
+RUN apk --update --no-cache add patch git
 WORKDIR /osxcross
 ARG OSX_CROSS_COMMIT
-ADD "https://github.com/tpoechtrager/osxcross.git#${OSX_CROSS_COMMIT}" .
+RUN git clone 'https://github.com/tpoechtrager/osxcross.git' /osxcross && \
+    cd /osxcross && \
+    git checkout --progress --force $OSX_CROSS_COMMIT && \
+    git submodule update --init --recursive
 
 # Patch osxcross -- from https://github.com/crazy-max/docker-osxcross
-COPY <<EOF lcxx.patch
-diff --git a/wrapper/target.cpp b/wrapper/target.cpp
-index 82bf65c..a2520e2 100644
---- a/wrapper/target.cpp
-+++ b/wrapper/target.cpp
-@@ -741,6 +741,9 @@ bool Target::setup() {
-           (stdlib == StdLib::libstdcxx && usegcclibs)) {
-         fargs.push_back("-nostdinc++");
-         fargs.push_back("-Qunused-arguments");
-+        if ((SDKOSNum >= OSVersion(11, 1)) && (stdlib == StdLib::libcxx)) {
-+          fargs.push_back("-lc++");
-+        }
-       }
-
-       if (stdlib == StdLib::libstdcxx && usegcclibs && targetarch.size() < 2 &&
-EOF
-RUN patch -p1 < lcxx.patch
+COPY support/lcxx.patch /lcxx.patch
+RUN pwd && ls -1al && patch -p1 < /lcxx.patch
 
 # Pre-create the base image using existing macos-cross-compiler
 FROM ghcr.io/shepherdjerred/macos-cross-compiler:latest AS base-macoscompilers
@@ -188,22 +176,7 @@ RUN userdel ubuntu || true && groupdel ubuntu || true
 RUN rm /etc/ld.so.cache && ldconfig
 
 # Runtime shell init script to ensure the user is created with the correct UID/GID for the mountpoint
-COPY <<EOF /init.sh
-#!/bin/bash
-set -eEuo pipefail
-qmk_uid=\$(stat --format='%u' \$TC_WORKDIR)
-qmk_gid=\$(stat --format='%g' \$TC_WORKDIR)
-groupadd --non-unique -g \$qmk_gid qmk
-useradd --non-unique -u \$qmk_uid -g \$qmk_gid -N qmk
-echo "qmk ALL=(ALL) NOPASSWD:ALL" | tee /etc/sudoers.d/qmk >/dev/null 2>&1
-cd \$TC_WORKDIR
-export PATH="/qmk/bin:/ct-ng/bin:/cctools/bin:/gcc/bin:/osxcross/binutils/bin:/osxcross/bin:\$PATH" # this must have `/cctools/bin:/gcc/bin` on \$PATH before osxcross equivalent
-if [[ -n \$1 ]]; then
-    sudo -u qmk -g qmk -H --preserve-env=PATH -- bash -lic "exec \$*"
-else
-    sudo -u qmk -g qmk -H --preserve-env=PATH -- bash -li
-fi
-EOF
+COPY support/init.sh /init.sh
 RUN chmod +x /init.sh
 
 ENTRYPOINT ["/init.sh"]
