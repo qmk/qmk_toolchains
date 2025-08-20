@@ -15,6 +15,12 @@ function respawn_docker_if_needed() {
         eval "$(parse_args "$@")"
         [ -n "${container_image:-}" ] || container_image='ghcr.io/tzarc/qmk_toolchains:builder'
         [ -n "${interactive:-}" ] && interactive='-it' || interactive=''
+
+        # Because I keep forgetting to run with --interactive when running menuconfig:
+        if [[ "${positional_args[0]:-}" == "menuconfig" ]]; then
+            interactive='-it'
+        fi
+
         cd "$script_dir"
         docker run --rm \
             ${interactive:-} \
