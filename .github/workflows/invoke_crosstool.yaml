@@ -64,7 +64,7 @@ jobs:
           sudo chown -R $(id -u):$(id -g) $GITHUB_WORKSPACE
 
       - name: Clone toolchains repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup workdir
         run: |
