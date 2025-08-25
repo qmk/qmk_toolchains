@@ -35,7 +35,7 @@ jobs:
           sudo df -h
 
       - name: Clone toolchains repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Login to GHCR
         if: github.event_name != 'pull_request'
@@ -109,7 +109,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Clone toolchains repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Download toolchains
         uses: actions/download-artifact@v4
