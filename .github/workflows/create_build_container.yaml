@@ -13,7 +13,7 @@ permissions:
 env:
   TC_WORKDIR: "/t"
   EXECUTE_UNDER_DOCKER: true
-  CROSSTOOL_REPO_REF: 7f9d7043cc3f39bbcd0e197fff0142c383a5b751
+  CROSSTOOL_REPO_REF: 403899e544855d5afc1856a1b87ae5b4a50bf761
 
 jobs:
   base_container:
@@ -35,7 +35,7 @@ jobs:
           sudo df -h
 
       - name: Clone toolchains repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Login to GHCR
         if: github.event_name != 'pull_request'
@@ -109,10 +109,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Clone toolchains repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Download toolchains
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           merge-multiple: true
           pattern: toolchain-host_linuxX64-target_*

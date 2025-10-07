@@ -86,10 +86,10 @@ jobs:
           sudo apt-get install -y zstd
 
       - name: Clone toolchains repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Download toolchains
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           pattern: toolchain-*-target_${{ matrix.target_host }}
           path: .
@@ -124,7 +124,7 @@ jobs:
           done
 
       - name: Upload toolchain
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: stripped-toolchains-target_${{ matrix.target_host }}
           path: |
@@ -137,10 +137,10 @@ jobs:
 
     steps:
       - name: Clone toolchains repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Download toolchains
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           pattern: stripped-toolchains-*
           path: .

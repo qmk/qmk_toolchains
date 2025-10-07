@@ -9,6 +9,11 @@ export SDK_VERSION=15.0
 # macOS Target Version (Monterey)
 export MACOSX_DEPLOYMENT_TARGET=12.0
 
+function rcmd() {
+    echo -e "\e[0;36mRunning: \e[1;36m$*\e[0m" >&2
+    "$@"
+}
+
 # If necessary, re-exec with a clean environment inside docker
 function respawn_docker_if_needed() {
     if [[ "$(uname -s)" == "Linux" ]] && [[ -n "${EXECUTE_UNDER_DOCKER:-}" ]]; then
@@ -22,11 +27,14 @@ function respawn_docker_if_needed() {
         fi
 
         cd "$script_dir"
-        docker run --rm \
+        rcmd docker run --rm \
             ${interactive:-} \
             -v "$script_dir:$TC_WORKDIR" \
             -w "$TC_WORKDIR" \
             -e TC_WORKDIR="$TC_WORKDIR" \
+            --cpus="$(bc -l <<< "scale=2; $(nproc)*0.9")" \
+            --memory="$(bc -l <<< "scale=2; $(free -m | awk '/^Mem:/{print $2}') * 0.9 / 1")m" \
+            --memory-swap="-1" \
             $container_image \
             ./$(basename $this_script) "$@"
         exit $?
@@ -266,7 +274,7 @@ function build_one() {
     echo "CT_STRIP_TARGET_TOOLCHAIN_EXECUTABLES=y" >>.config
 
     # Don't go overboard with the parallel jobs
-    echo "CT_PARALLEL_JOBS=$(($(cpu_count) - 1))" >>.config
+    echo "CT_PARALLEL_JOBS=$(cpu_count)" >>.config
 
     ct_ng_olddefconfig
     # Disable the progress bar and other unnecessary features, zstd support was broken last time it was checked
@@ -285,8 +293,10 @@ function build_one() {
     # GDB's TUI causes issues with the build, so disable it.
     echo 'CT_GDB_CROSS_EXTRA_CONFIG_ARRAY="--disable-tui"' >>.config # see https://github.com/crosstool-ng/crosstool-ng/issues/321
 
-    # For target toolchains, pin binutils at 2.43 due to issues with ARM relocations (ChibiOS-Contrib): https://gcc.gnu.org/pipermail/gcc-help/2025-May/144169.html
-    if [[ -z "${build_host_compile:-}" ]]; then
+    # For baremetal ARM toolchains, pin binutils at 2.43 due to issues with ARM relocations (ChibiOS-Contrib): https://gcc.gnu.org/pipermail/gcc-help/2025-May/144169.html
+    # Fixed in https://github.com/ChibiOS/ChibiOS-Contrib/commit/2fb815dfe05607e65f85083393e1c3aa41cdea3d (2025-06-06)
+    # Can remove this override once newer ChibiOS-Contrib submodule revisions are merged into QMK firmware.
+    if [[ -z "${build_host_compile:-}" ]] && [[ "${sample_name:-}" == *"arm"* ]]; then
         echo 'CT_BINUTILS_V_2_43=y' >>.config
     fi
 
@@ -378,6 +388,21 @@ function build_one() {
     echo "# CT_CC_LANG_OBJCXX is not set" >>.config
     echo "CT_CC_LANG_GOLANG=n" >>.config
     echo "# CT_CC_LANG_GOLANG is not set" >>.config
+
+    # Too many concurrent LTO runs breaks RISC-V builds on GHA, which terminate due to being OOM
+    # See https://bugs.gentoo.org/946338 for similar issues
+    # The following set of options all reduce memory usage during linking of the compiler itself. RISC-V builds will randomly fail on GitHub Actions runs if these aren't present.
+    echo 'CT_CC_GCC_EXTRA_CONFIG_ARRAY="--enable-link-serialization=1 --with-build-config=bootstrap-O1"' >>.config
+    echo 'CT_CC_GCC_CORE_EXTRA_CONFIG_ARRAY="--enable-link-serialization=1 --with-build-config=bootstrap-O1"' >>.config
+    echo "CT_CC_GCC_DISABLE_PCH=y" >>.config
+    echo 'CT_EXTRA_CFLAGS_FOR_HOST="-Os -g0"' >>.config
+    echo 'CT_EXTRA_CXXFLAGS_FOR_HOST="-Os -g0"' >>.config
+    if [ -n "${canadian_host:-}" ] && [ -z "$(echo $toolchain_dir | grep macos)" ]; then
+        # These only seem to be available with the toolchains built by the base container -- the macOS cross-compilers don't have them.
+        # Those don't seem to have an issue with LTO, so safe to skip here.
+        echo 'CT_EXTRA_LDFLAGS_FOR_HOST="-Wl,--no-keep-memory -Wl,--reduce-memory-overheads"' >>.config
+    fi
+
     ct_ng_olddefconfig
 
     # Configure the required C library

@@ -1,28 +1,22 @@
-https://linux.qmk.fm/toolchain_tarballs/avr-libc-2.2.1.tar.bz2
-https://linux.qmk.fm/toolchain_tarballs/binutils-2.43.1.tar.xz
-https://linux.qmk.fm/toolchain_tarballs/binutils-2.44.tar.xz
-https://linux.qmk.fm/toolchain_tarballs/expat-2.6.4.tar.xz
-https://linux.qmk.fm/toolchain_tarballs/gcc-10.5.0.tar.xz
-https://linux.qmk.fm/toolchain_tarballs/gcc-14.2.0.tar.xz
-https://linux.qmk.fm/toolchain_tarballs/gcc-15.1.0.tar.xz
-https://linux.qmk.fm/toolchain_tarballs/gcc-8.5.0.tar.xz
-https://linux.qmk.fm/toolchain_tarballs/gdb-16.2.tar.xz
-https://linux.qmk.fm/toolchain_tarballs/gdb-16.3.tar.xz
-https://linux.qmk.fm/toolchain_tarballs/gdb-9.2.tar.xz
-https://linux.qmk.fm/toolchain_tarballs/gettext-0.23.1.tar.xz
-https://linux.qmk.fm/toolchain_tarballs/glibc-2.28.tar.xz
-https://linux.qmk.fm/toolchain_tarballs/glibc-2.36.tar.xz
-https://linux.qmk.fm/toolchain_tarballs/gmp-6.2.1.tar.xz
-https://linux.qmk.fm/toolchain_tarballs/isl-0.26.tar.xz
-https://linux.qmk.fm/toolchain_tarballs/libiconv-1.18.tar.gz
-https://linux.qmk.fm/toolchain_tarballs/linux-4.19.324.tar.xz
-https://linux.qmk.fm/toolchain_tarballs/linux-5.10.233.tar.xz
-https://linux.qmk.fm/toolchain_tarballs/mingw-w64-v10.0.0.tar.bz2
-https://linux.qmk.fm/toolchain_tarballs/mpc-1.3.1.tar.gz
-https://linux.qmk.fm/toolchain_tarballs/mpfr-4.2.1.tar.xz
-https://linux.qmk.fm/toolchain_tarballs/ncurses-6.5.tar.gz
-https://linux.qmk.fm/toolchain_tarballs/newlib-4.4.0.20231231.tar.gz
-https://linux.qmk.fm/toolchain_tarballs/newlib-4.5.0.20241231.tar.gz
-https://linux.qmk.fm/toolchain_tarballs/picolibc-1.8.10.tar.xz
-https://linux.qmk.fm/toolchain_tarballs/picolibc-1.8.9.tar.xz
-https://linux.qmk.fm/toolchain_tarballs/zlib-1.3.1.tar.xz
+7746c701e9172584bb8923b941958b7ab7ff323bcf1fe6c46a46e3627f74bb750dcaeab23fbb8ba535c7aa2d56347a9d1b7c64098fda505b24e87e116e71f714  tarballs/avr-libc-2.2.1.tar.bz2
+20977ad17729141a2c26d358628f44a0944b84dcfefdec2ba029c2d02f40dfc41cc91c0631044560d2bd6f9a51e1f15846b4b311befbe14f1239f14ff7d57824  tarballs/binutils-2.43.1.tar.xz
+c7b10a7466d9fd398d7a0b3f2a43318432668d714f2ec70069a31bdc93c86d28e0fe83792195727167743707fbae45337c0873a0786416db53bbf22860c16ce7  tarballs/binutils-2.45.tar.xz
+4c9a6c1c1769d2c4404da083dd3013dbc73883da50e2b7353db2349a420e9b6d27cac7dbcb645991d6c7cdbf79bd88486fc1ac353084ce48e61081fb56e13d46  tarballs/expat-2.7.1.tar.xz
+89047a2e07bd9da265b507b516ed3635adb17491c7f4f67cf090f0bd5b3fc7f2ee6e4cc4008beef7ca884b6b71dffe2bb652b21f01a702e17b468cca2d10b2de  tarballs/gcc-15.2.0.tar.xz
+92f599680e6b7fbce88bcdda810f468777d541e5fddfbb287f7977d51093de2a5178bd0e6a08dfe37090ea10a0508a43ccd00220041abbbec33f1179bfc174d8  tarballs/gcc-8.5.0.tar.xz
+fffd6689c3405466a179670b04720dc825e4f210a761f63dd2b33027432f8cd5d1c059c431a5ec9e165eedd1901220b5329d73c522f9a444788888c731b29e9c  tarballs/gdb-16.3.tar.xz
+544e41c9390695df1c21542842e9ca027a03cb7d4045d8cd759dec1a3dfb624aae900751b458bdb31d6454b37c40c474a952059b884555a03c7c95d6d0e687b1  tarballs/gettext-0.26.tar.xz
+521f820953ff07c69ece4c2186f59fc061a7f9747932cd70ef2995c2b2deee76eeb6de700d85071cdca5949179aa8ccee75eda7feca1394121ec7b821ad0a3f3  tarballs/glibc-2.28.tar.xz
+9ea0bbda32f83a85b7da0c34f169607fb8a102f0a11a914e6bf531be47d1bef4f5307128286cffa1e2dc5879f0e6ccaef527dd353486883fa332a0b44bde8b3e  tarballs/glibc-2.36.tar.xz
+c99be0950a1d05a0297d65641dd35b75b74466f7bf03c9e8a99895a3b2f9a0856cd17887738fa51cf7499781b65c049769271cbcb77d057d2e9f1ec52e07dd84  tarballs/gmp-6.2.1.tar.xz
+6d6f50c3f6f26e0d3f67586dee6427d87999c426c94069a6f3012ec3c9a41adeebd50f43b5d2705db6abc12e38eb01c19f55dba113c0799da5f667eef46b2be0  tarballs/isl-0.27.tar.xz
+a55eb3b7b785a78ab8918db8af541c9e11deb5ff4f89d54483287711ed797d87848ce0eafffa7ce26d9a7adb4b5a9891cb484f94bd4f51d3ce97a6a47b4c719a  tarballs/libiconv-1.18.tar.gz
+4a2c5f358e9caf47061d707db67738e0d1b1f24aebeeaab81dc2701cc3793ab574a7e0a3a5df2f99d6ff1d777acdca1d885da87ee31098c5b901853d8b580310  tarballs/linux-4.19.325.tar.xz
+ddff83678fd39465b2e92141267403db58b64e95fb746259c92cd439ffd695f5aa3aed81b9bf1891f193e8476a2ab3e03fcdad77ebb953f934b8e19ae609a827  tarballs/linux-5.10.240.tar.xz
+3c0827af7c40809a867758f6cd9ef3ff0c988b43082345bf725e03949af95968d634ace99a7ffae323189549221dcb5d861de9e801f1fbc7904e446641b60516  tarballs/mingw-w64-v10.0.0.tar.bz2
+4bab4ef6076f8c5dfdc99d810b51108ced61ea2942ba0c1c932d624360a5473df20d32b300fc76f2ba4aa2a97e1f275c9fd494a1ba9f07c4cb2ad7ceaeb1ae97  tarballs/mpc-1.3.1.tar.gz
+eb9e7f51b5385fb349cc4fba3a45ffdf0dd53be6dfc74932dc01258158a10514667960c530c47dd9dfc5aa18be2bd94859d80499844c5713710581e6ac6259a9  tarballs/mpfr-4.2.2.tar.xz
+fc5a13409d2a530a1325776dcce3a99127ddc2c03999cfeb0065d0eee2d68456274fb1c7b3cc99c1937bc657d0e7fca97016e147f93c7821b5a4a6837db821e8  tarballs/ncurses-6.5.tar.gz
+d391ea3ac68ddb722909ef790f81ba4d6c35d9b2e0fcdb029f91a6c47db9ee94a686a2bdff211fb84025e1a317e257acfa59abda3fd2bc6609966798e1c604dc  tarballs/newlib-4.5.0.20241231.tar.gz
+2b7f347fef1e5523f7acff32aa6f261bf9aae959902ea970f0fe414ff5206481c2ef37ade078b432022617e1ac6352e9039c7e95a61483eafdd241aac70683e6  tarballs/picolibc-1.8.10.tar.xz
+1e8e70b362d64a233591906a1f50b59001db04ca14aaffad522198b04680be501736e7d536b4191e2f99767e7001ca486cd802362cca2be05d5d409b83ea732d  tarballs/zlib-1.3.1.tar.xz

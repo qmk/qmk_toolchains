@@ -27,9 +27,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Fixup memory overcommit
+        run: |
+          set -x
+          cat /proc/sys/vm/overcommit_memory
+          sudo sysctl -w vm.overcommit_memory=2
+          cat /proc/sys/vm/overcommit_memory
+
       - name: Maximize build space
-        uses: easimon/maximize-build-space@master
+        uses: tzarc/maximize-build-space@btrfs-mods
         with:
+          btrfs-compression: "true"
           build-mount-path: /b
           root-reserve-mb: 2048
           swap-size-mb: 8192
@@ -39,32 +47,13 @@ jobs:
           remove-codeql: "true"
           remove-docker-images: "true"
 
-      - name: Move docker data root to /b for more space
+      - name: Install dependencies
         run: |
-          set -x
-          DOCKER_DATA_ROOT='/b/.docker'
-          DOCKER_DAEMON_JSON='/etc/docker/daemon.json'
-          sudo mkdir -p "${DOCKER_DATA_ROOT}"
-          echo "{\"data-root\": \"${DOCKER_DATA_ROOT}\"}" | sudo tee "${DOCKER_DAEMON_JSON}"
-          sudo systemctl restart docker
-          sudo df -h
-
-      - name: Move GitHub _temp to /b for more space
-        run: |
-          set -x
-          sudo mkdir -p /b/_temp
-          sudo mount --bind /b/_temp /home/runner/work/_temp
-          sudo chown -R $(id -u):$(id -g) /home/runner/work/_temp
-
-      - name: Move GitHub workspace to /b for more space
-        run: |
-          set -x
-          sudo mkdir -p /b/workspace
-          sudo mount --bind /b/workspace $GITHUB_WORKSPACE
-          sudo chown -R $(id -u):$(id -g) $GITHUB_WORKSPACE
+          sudo apt-get update
+          sudo apt-get install -y bc
 
       - name: Clone toolchains repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup workdir
         run: |
@@ -81,18 +70,19 @@ jobs:
             state.tar
             build_logs.tar.zst
             qmk_toolchain-gcc*-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}.tar.zst
-          #key: cache-${{ inputs.crosstool_host_os }}-${{ inputs.build_host }}-${{ inputs.target_host }}${{ inputs.toolchain_suffix }}-phase${{ inputs.phase_number }}-${{ hashFiles('.github/workflows/**', '${{ inputs.build_script }}', 'Dockerfile*', 'common.bashinc') }}
-          key: cache-${{ inputs.crosstool_host_os }}-${{ inputs.build_host }}-${{ inputs.target_host }}${{ inputs.toolchain_suffix }}-phase${{ inputs.phase_number }}-${{ hashFiles('${{ inputs.build_script }}', 'Dockerfile*', 'common.bashinc') }}
+          key: cache-${{ inputs.crosstool_host_os }}-${{ inputs.build_host }}-${{ inputs.target_host }}${{ inputs.toolchain_suffix }}-phase${{ inputs.phase_number }}-${{ hashFiles('.github/workflows/**', '${{ inputs.build_script }}', 'Dockerfile*', 'common.bashinc') }}
 
       - name: Look at all this space for activities
         run: |
           set -x
+          sudo free -h
+          sudo swapon --show
           sudo df -h
           sudo mount | column -t
 
       - name: Download source tarballs
         if: steps.cache.outputs.cache-hit != 'true'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: tarballs
 
@@ -105,7 +95,7 @@ jobs:
 
       - name: Download bootstrap toolchain
         if: steps.cache.outputs.cache-hit != 'true' && inputs.fetch_bootstrap == true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: toolchain-host_${{ inputs.crosstool_host_os }}-target_${{ inputs.crosstool_host_os }}_qmk_bootstrap
 
@@ -124,7 +114,7 @@ jobs:
 
       - name: Download build state
         if: steps.cache.outputs.cache-hit != 'true' && inputs.restore_state == true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: state-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}-phase${{ env.LAST_PHASE_NUMBER }}
 
@@ -138,13 +128,44 @@ jobs:
           # Extract the state tarball
           tar axf state.tar
 
+      - name: Look at all this space for activities (pre-build)
+        if: always() && !cancelled()
+        run: |
+          set -x
+          sudo free -h
+          sudo swapon --show
+          sudo df -h
+          sudo mount | column -t
+
       - name: Build toolchain
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
+          (while true; do
+            echo "[$(date +%H:%M:%S)] Mem: $(free -h | grep Mem | awk '{print $3"/"$2}') Swap: $(free -h | grep Swap | awk '{print $3"/"$2}')"
+            # Check if we're in the critical linking phase
+            if pgrep -f "collect2.*cc1\|collect2.*lto1" > /dev/null; then
+              echo "[$(date +%H:%M:%S)] *** CRITICAL: cc1/lto1 linking in progress ***"
+            fi
+            sleep 10
+          done) &
+          MONITOR_PID=$!
+
           set -x
           cd $TC_WORKDIR
+
           # Kick off the requested build phase (kill after 5h45m so logs can be gathered)
           timeout 19800 ./${{ inputs.build_script }} ${{ inputs.script_args }}
+
+          kill $MONITOR_PID 2>/dev/null || true
+
+      - name: Look at all this space for activities (post-build)
+        if: always() && !cancelled()
+        run: |
+          set -x
+          sudo free -h
+          sudo swapon --show
+          sudo df -h
+          sudo mount | column -t
 
       - name: Gather build logs
         if: always() && !cancelled()
@@ -153,7 +174,7 @@ jobs:
           find . \( -name \*.log \) -print0 | xargs -0 tar acvf build_logs.tar.zst || true
 
       - name: Upload build logs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always() && !cancelled()
         with:
           name: build.log-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}-phase${{ inputs.phase_number }}
@@ -170,7 +191,7 @@ jobs:
 
       - name: Upload build state
         if: inputs.save_state == true
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: state-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}-phase${{ inputs.phase_number }}
           path: state.tar
@@ -189,7 +210,7 @@ jobs:
 
       - name: Upload toolchain
         if: inputs.toolchain_tarball == true
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: toolchain-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}
           path: |
