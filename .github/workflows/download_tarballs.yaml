@@ -53,7 +53,7 @@ jobs:
           tar acvf tarballs.tar.zst tarballs
 
       - name: Upload source tarballs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: tarballs
           path: tarballs.tar.zst
