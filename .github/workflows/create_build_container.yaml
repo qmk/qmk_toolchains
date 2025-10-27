@@ -112,7 +112,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download toolchains
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           merge-multiple: true
           pattern: toolchain-host_linuxX64-target_*

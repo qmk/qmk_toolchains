@@ -92,7 +92,7 @@ jobs:
 
       - name: Download source tarballs
         if: steps.cache.outputs.cache-hit != 'true'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: tarballs
 
@@ -105,7 +105,7 @@ jobs:
 
       - name: Download bootstrap toolchain
         if: steps.cache.outputs.cache-hit != 'true' && inputs.fetch_bootstrap == true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: toolchain-host_${{ inputs.crosstool_host_os }}-target_${{ inputs.crosstool_host_os }}_qmk_bootstrap
 
@@ -124,7 +124,7 @@ jobs:
 
       - name: Download build state
         if: steps.cache.outputs.cache-hit != 'true' && inputs.restore_state == true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: state-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}-phase${{ env.LAST_PHASE_NUMBER }}
 
