@@ -30,7 +30,7 @@ jobs:
           sudo mount --bind $GITHUB_WORKSPACE $TC_WORKDIR
 
       - name: Clone toolchains repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Cache check
         id: cache
