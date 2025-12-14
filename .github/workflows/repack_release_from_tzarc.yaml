@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Clone toolchains repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Delete tag
         run: gh release delete ${{ inputs.qmk_release_tag }} --cleanup-tag || true
