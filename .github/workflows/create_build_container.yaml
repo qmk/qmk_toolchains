@@ -24,15 +24,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Move docker data root to /mnt for more space
+      - name: Fixup memory overcommit
         run: |
           set -x
-          DOCKER_DATA_ROOT='/mnt/var/lib/docker'
-          DOCKER_DAEMON_JSON='/etc/docker/daemon.json'
-          sudo mkdir -p "${DOCKER_DATA_ROOT}"
-          echo "{\"data-root\": \"${DOCKER_DATA_ROOT}\"}" | sudo tee "${DOCKER_DAEMON_JSON}"
-          sudo systemctl restart docker
-          sudo df -h
+          cat /proc/sys/vm/overcommit_memory
+          sudo sysctl -w vm.overcommit_memory=2
+          cat /proc/sys/vm/overcommit_memory
+
+      - name: Maximize build space
+        uses: tzarc/maximize-build-space@btrfs-mods
+        with:
+          btrfs-compression: "true"
+          build-mount-path: /b
+          root-reserve-mb: 2048
+          swap-size-mb: 8192
+          remove-dotnet: "true"
+          remove-android: "true"
+          remove-haskell: "true"
+          remove-codeql: "true"
+          remove-docker-images: "true"
 
       - name: Clone toolchains repo
         uses: actions/checkout@v5
