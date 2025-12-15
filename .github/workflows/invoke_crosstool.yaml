@@ -174,7 +174,7 @@ jobs:
           find . \( -name \*.log \) -print0 | xargs -0 tar acvf build_logs.tar.zst || true
 
       - name: Upload build logs
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         if: always() && !cancelled()
         with:
           name: build.log-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}-phase${{ inputs.phase_number }}
@@ -191,7 +191,7 @@ jobs:
 
       - name: Upload build state
         if: inputs.save_state == true
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: state-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}-phase${{ inputs.phase_number }}
           path: state.tar
@@ -210,7 +210,7 @@ jobs:
 
       - name: Upload toolchain
         if: inputs.toolchain_tarball == true
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: toolchain-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}
           path: |
