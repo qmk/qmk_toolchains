@@ -8,7 +8,7 @@ ARG OSX_CROSS_COMMIT="29fe6dd35522073c9df5800f8cd1feb4b9a993a8"
 ARG CROSSTOOL_REPO_REF="403899e544855d5afc1856a1b87ae5b4a50bf761"
 
 # Get the macOS SDK
-FROM --platform=amd64 alpine:${ALPINE_VERSION} AS sdk
+FROM alpine:${ALPINE_VERSION} AS sdk
 RUN apk --update --no-cache add ca-certificates curl tar xz
 ARG OSX_SDK
 ARG OSX_SDK_URL
@@ -16,7 +16,7 @@ RUN curl -sSL "$OSX_SDK_URL" -o "/$OSX_SDK.tar.xz"
 RUN mkdir /osxsdk && tar -xf "/$OSX_SDK.tar.xz" -C "/osxsdk"
 
 # Get the osxcross source
-FROM --platform=amd64 alpine:${ALPINE_VERSION} AS osxcross-src
+FROM alpine:${ALPINE_VERSION} AS osxcross-src
 RUN apk --update --no-cache add patch git
 WORKDIR /osxcross
 ARG OSX_CROSS_COMMIT
@@ -31,6 +31,9 @@ RUN pwd && ls -1al && patch -p1 < /lcxx.patch
 
 # Pre-create the base image using existing macos-cross-compiler
 FROM ghcr.io/shepherdjerred/macos-cross-compiler:latest AS base-macoscompilers
+# Fix permissions on /tmp
+RUN chmod 1777 /tmp
+# Install required packages
 RUN export DEBIAN_FRONTEND="noninteractive" \
   && apt-get update \
   && apt-get install --no-install-recommends -y \
