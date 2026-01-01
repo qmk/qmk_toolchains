@@ -89,8 +89,9 @@ RUN export DEBIAN_FRONTEND="noninteractive" \
 # Build binutils for both x86_64 and aarch64
 FROM base-macoscompilers AS build-osxcross
 ARG OSX_SDK
-WORKDIR /workspace
-COPY --link --from=osxcross-src /osxcross .
+# Need to reside inside `/tmp/osxcross-gcc-src` as that's where osxcross was previously built, and the environment application outputs that path
+WORKDIR /tmp/osxcross-gcc-src
+COPY --link --from=osxcross-src /osxcross /tmp/osxcross-gcc-src
 COPY --link --from=sdk /$OSX_SDK.tar.xz ./tarballs/$OSX_SDK.tar.xz
 ENV PATH="/osxcross/bin:$PATH"
 RUN mkdir build
