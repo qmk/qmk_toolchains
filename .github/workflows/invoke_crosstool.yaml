@@ -71,7 +71,7 @@ jobs:
           sudo mount | column -t
 
       - name: Download source tarballs
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: tarballs
 
@@ -83,7 +83,7 @@ jobs:
 
       - name: Download bootstrap toolchain
         if: inputs.fetch_bootstrap == true
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: toolchain-host_${{ inputs.crosstool_host_os }}-target_${{ inputs.crosstool_host_os }}_qmk_bootstrap
 
@@ -102,7 +102,7 @@ jobs:
 
       - name: Download build state
         if: inputs.restore_state == true
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: state-host_${{ inputs.build_host }}-target_${{ inputs.target_host }}${{ inputs.toolchain_suffix }}-phase${{ env.LAST_PHASE_NUMBER }}
 
