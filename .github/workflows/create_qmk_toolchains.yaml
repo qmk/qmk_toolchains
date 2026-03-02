@@ -111,7 +111,7 @@ jobs:
           done
 
       - name: Upload toolchain
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: stripped-toolchains-target_${{ matrix.target_host }}
           path: |

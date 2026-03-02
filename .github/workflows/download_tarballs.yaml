@@ -43,7 +43,7 @@ jobs:
           tar acvf tarballs.tar.zst tarballs
 
       - name: Upload source tarballs
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: tarballs
           path: tarballs.tar.zst
