@@ -51,6 +51,7 @@ RUN export DEBIAN_FRONTEND="noninteractive" \
     curl \
     flex \
     gawk \
+    genisoimage \
     git \
     gperf \
     help2man \
@@ -83,6 +84,7 @@ RUN export DEBIAN_FRONTEND="noninteractive" \
     wget \
     xz-utils \
     zlib1g-dev \
+    zip \
     zstd \
   && apt-get clean \
   && rm -rf /var/cache/apt/archives /var/lib/apt/lists
@@ -129,6 +131,7 @@ RUN export DEBIAN_FRONTEND="noninteractive" \
     curl \
     flex \
     gawk \
+    genisoimage \
     git \
     gperf \
     help2man \
@@ -162,6 +165,7 @@ RUN export DEBIAN_FRONTEND="noninteractive" \
     wget \
     xz-utils \
     zlib1g-dev \
+    zip \
     zstd \
   && apt-get clean \
   && rm -rf /var/cache/apt/archives /var/lib/apt/lists
