@@ -73,6 +73,7 @@ RUN export DEBIAN_FRONTEND="noninteractive" \
     lzma-dev \
     make \
     meson \
+    osslsigncode \
     patch \
     patchelf \
     python3 \
@@ -153,6 +154,7 @@ RUN export DEBIAN_FRONTEND="noninteractive" \
     lzma-dev \
     make \
     meson \
+    osslsigncode \
     patch \
     patchelf \
     pkg-config \
