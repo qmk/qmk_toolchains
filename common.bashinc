@@ -338,15 +338,6 @@ function build_one() {
 
     ct_ng_olddefconfig
 
-    # Apparently an older version of GMP is required due to bootstrapping with older gcc
-    ${SED} -i \
-        -e 's/^.*CT_GMP_V_6.*$/# CT_GMP_V_6_???? is not set/' \
-        .config
-    echo 'CT_GMP_V_6_2=y' >>.config
-    echo 'CT_GMP_VERSION="6.2.1"' >>.config
-
-    ct_ng_olddefconfig
-
     # Swap to an older version of Linux (LTS) and glibc to avoid execution issues with older distros, especially things like older Debian with Raspberry Pi targets.
     if [[ ! -z "$(echo $sample_name | grep riscv64-unknown-linux-gnu)" ]]; then
         # rv64 needs a slightly newer kernel
