@@ -80,7 +80,7 @@ jobs:
           ls -1al *.tar.zst
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: |
             qmk_toolchain*
