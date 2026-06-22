@@ -45,7 +45,7 @@ jobs:
           remove-docker-images: "true"
 
       - name: Clone toolchains repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Login to GHCR
         if: github.event_name != 'pull_request'
@@ -137,7 +137,7 @@ jobs:
           remove-docker-images: "true"
 
       - name: Clone toolchains repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Download toolchains
         uses: actions/download-artifact@v8

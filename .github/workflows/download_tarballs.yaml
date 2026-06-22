@@ -30,7 +30,7 @@ jobs:
           sudo mount --bind $GITHUB_WORKSPACE $TC_WORKDIR
 
       - name: Clone toolchains repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Gather source tarballs
         run: |
