@@ -3,9 +3,9 @@ ARG ALPINE_VERSION="3.18"
 ARG OSX_SDK="MacOSX15.0.sdk"
 ARG OSX_SDK_URL="https://github.com/joseluisq/macosx-sdks/releases/download/15.0/${OSX_SDK}.tar.xz"
 
-ARG OSX_CROSS_COMMIT="29fe6dd35522073c9df5800f8cd1feb4b9a993a8"
+ARG OSX_CROSS_COMMIT="c2782fe45478c64a7b105da1acd15b439d58ebb2"
 
-ARG CROSSTOOL_REPO_REF="d7a90ff11aae5e59d6acd8c491f0297c15b7fa37"
+ARG CROSSTOOL_REPO_REF="26354bd1b69cba20f8129c6be379556f627c7443"
 
 # Get the macOS SDK
 FROM alpine:${ALPINE_VERSION} AS sdk
@@ -30,7 +30,7 @@ COPY support/lcxx.patch /lcxx.patch
 RUN pwd && ls -1al && patch -p1 < /lcxx.patch
 
 # Pre-create the base image using existing macos-cross-compiler
-FROM ghcr.io/shepherdjerred/macos-cross-compiler:latest AS base-macoscompilers
+FROM docker.io/shepherdjerred/macos-cross-compiler:15.0 AS base-macoscompilers
 # Fix permissions on /tmp
 RUN chmod 1777 /tmp
 # Install required packages
