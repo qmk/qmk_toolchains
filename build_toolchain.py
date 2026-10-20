@@ -455,8 +455,11 @@ def build_one(args: argparse.Namespace, combo: Combo) -> None:
         '"--enable-link-serialization=1 --with-build-config=bootstrap-O1"',
     )
     ed.set_value("CT_CC_GCC_DISABLE_PCH", "y")
-    ed.set_value("CT_EXTRA_CFLAGS_FOR_HOST", '"-Os -g0"')
-    ed.set_value("CT_EXTRA_CXXFLAGS_FOR_HOST", '"-Os -g0"')
+
+    # ct-ng feeds these to CXXFLAGS too; there is no CXXFLAGS_FOR_HOST option. Not -Os: it implies -fdeclone-ctor-dtor, which
+    # breaks linking C++20 against libstdc++ on targets without symbol aliases: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=125359
+    ed.set_value("CT_EXTRA_CFLAGS_FOR_HOST", '"-O2 -g0"')
+
     if combo.canadian_host and "macos" not in str(toolchain_dir):
         # These only seem to be available with the toolchains built by the base container -- the macOS cross-compilers don't have them.
         # Those don't seem to have an issue with LTO, so safe to skip here.
@@ -602,7 +605,7 @@ def build_one(args: argparse.Namespace, combo: Combo) -> None:
         subprocess.run(
             [
                 "cp",
-                f"/gcc/{combo.canadian_host}/lib/libstdc++.6.dylib",
+                f"/osxcross/{combo.canadian_host}/lib/libstdc++.6.dylib",
                 str(toolchain_dir / "lib"),
             ],
             check=False,

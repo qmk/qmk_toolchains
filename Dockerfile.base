@@ -3,55 +3,39 @@ ARG ALPINE_VERSION="3.18"
 ARG OSX_SDK="MacOSX15.0.sdk"
 ARG OSX_SDK_URL="https://github.com/joseluisq/macosx-sdks/releases/download/15.0/${OSX_SDK}.tar.xz"
 
-ARG OSX_CROSS_COMMIT="c2782fe45478c64a7b105da1acd15b439d58ebb2"
+ARG OSX_CROSS_COMMIT="27d21e4977c9751d01199c7a226a6faf494c3dd9"
 
 ARG CROSSTOOL_REPO_REF="26354bd1b69cba20f8129c6be379556f627c7443"
 
 # Get the macOS SDK
 FROM alpine:${ALPINE_VERSION} AS sdk
-RUN apk --update --no-cache add ca-certificates curl tar xz
+RUN apk --update --no-cache add ca-certificates curl
 ARG OSX_SDK
 ARG OSX_SDK_URL
 RUN curl -sSL "$OSX_SDK_URL" -o "/$OSX_SDK.tar.xz"
-RUN mkdir /osxsdk && tar -xf "/$OSX_SDK.tar.xz" -C "/osxsdk"
 
 # Get the osxcross source
 FROM alpine:${ALPINE_VERSION} AS osxcross-src
-RUN apk --update --no-cache add patch git
-WORKDIR /osxcross
+RUN apk --update --no-cache add git
 ARG OSX_CROSS_COMMIT
-RUN git clone 'https://github.com/tpoechtrager/osxcross.git' /osxcross && \
-    cd /osxcross && \
+RUN git clone 'https://github.com/tpoechtrager/osxcross.git' /osxcross-src && \
+    cd /osxcross-src && \
     git checkout --progress --force $OSX_CROSS_COMMIT && \
     git submodule update --init --recursive
 
-# Patch osxcross -- from https://github.com/crazy-max/docker-osxcross
-COPY support/lcxx.patch /lcxx.patch
-RUN pwd && ls -1al && patch -p1 < /lcxx.patch
-
-# Pre-create the base image using existing macos-cross-compiler
-FROM docker.io/shepherdjerred/macos-cross-compiler:15.0 AS base-macoscompilers
-# Fix permissions on /tmp
-RUN chmod 1777 /tmp
-# Install required packages
+# Build the macOS host compilers for the canadian builds
+FROM ubuntu:noble AS build-osxcross
 COPY support/packages.txt /tmp/packages.txt
 RUN export DEBIAN_FRONTEND="noninteractive" \
   && apt-get update \
   && xargs -a /tmp/packages.txt apt-get install --no-install-recommends -y \
   && apt-get clean \
   && rm -rf /var/cache/apt/archives /var/lib/apt/lists
-
-# Build binutils for both x86_64 and aarch64
-FROM base-macoscompilers AS build-osxcross
 ARG OSX_SDK
-# Need to reside inside `/tmp/osxcross-gcc-src` as that's where osxcross was previously built, and the environment application outputs that path
-WORKDIR /tmp/osxcross-gcc-src
-COPY --link --from=osxcross-src /osxcross /tmp/osxcross-gcc-src
-COPY --link --from=sdk /$OSX_SDK.tar.xz ./tarballs/$OSX_SDK.tar.xz
-ENV PATH="/osxcross/bin:$PATH"
-RUN mkdir build
-RUN OSX_VERSION_MIN=10.13 UNATTENDED=1 ENABLE_COMPILER_RT_INSTALL=1 TARGET_DIR=/osxcross TARGET_ARCH=x86_64 ./build_binutils.sh
-RUN OSX_VERSION_MIN=10.13 UNATTENDED=1 ENABLE_COMPILER_RT_INSTALL=1 TARGET_DIR=/osxcross TARGET_ARCH=aarch64 ./build_binutils.sh
+COPY --link --from=osxcross-src /osxcross-src /tmp/osxcross-src
+COPY --link --from=sdk /$OSX_SDK.tar.xz /tmp/osxcross-src/tarballs/$OSX_SDK.tar.xz
+COPY support/build-osxcross.sh /tmp/build-osxcross.sh
+RUN /tmp/build-osxcross.sh /tmp/osxcross-src /osxcross
 
 # Build crosstool-ng
 FROM build-osxcross AS build-crosstool-ng
@@ -74,13 +58,8 @@ RUN export DEBIAN_FRONTEND="noninteractive" \
   && rm -rf /var/cache/apt/archives /var/lib/apt/lists \
   && rm /tmp/packages.txt
 
-# Copy across the base image compilers and SDKs
 COPY --from=build-crosstool-ng /ct-ng /ct-ng
 COPY --from=build-crosstool-ng /osxcross /osxcross
-COPY --from=build-crosstool-ng /gcc /gcc
-COPY --from=build-crosstool-ng /cctools /cctools
-COPY --from=build-crosstool-ng /sdk /sdk
-COPY --from=build-crosstool-ng /usr/local /usr/local
 
 # Remove the ubuntu user and group
 USER 0:0

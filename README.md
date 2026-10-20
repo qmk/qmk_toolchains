@@ -33,3 +33,15 @@ Two prerequisite container images are created through GitHub actions -- `ghcr.io
 * `x86_64-apple-darwin24`
 
 These containers need an environment variable -- `$TC_WORKDIR` -- with a corresponding volume mounted to that location inside the container as the user/group permissions will be updated to match during execution.
+
+# Building a toolchain locally
+
+`build_toolchain.py` re-executes itself inside the builder container with the repository mounted at `$TC_WORKDIR`. The tracked `.envrc` sets `TC_WORKDIR` and `EXECUTE_UNDER_DOCKER` for `direnv` users; export them yourself otherwise.
+
+```sh
+./build_toolchain.py --host macosARM64 --target baremetalAVR
+```
+
+Run it without arguments to list every host/target pair with the command that builds it.
+
+The result lands in `toolchains/host_<host>-target_<target>/`, with crosstool-ng's working tree, logs and saved step state under `build/`, and source tarballs cached in `tarballs/`.

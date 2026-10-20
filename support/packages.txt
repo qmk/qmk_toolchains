@@ -10,6 +10,7 @@ clang
 cmake
 cpio
 curl
+file
 flex
 gawk
 genisoimage
@@ -31,6 +32,7 @@ libxml2-dev
 libz-dev
 libzstd-dev
 lld
+llvm
 lzma-dev
 make
 meson

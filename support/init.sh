@@ -4,7 +4,7 @@
 
 set -eEuo pipefail
 
-export PATH="/qmk/bin:/ct-ng/bin:/cctools/bin:/gcc/bin:/osxcross/binutils/bin:/osxcross/bin:$PATH" # this must have `/cctools/bin:/gcc/bin` on $PATH before osxcross equivalent
+export PATH="/qmk/bin:/ct-ng/bin:/osxcross/bin:$PATH"
 
 if [ -n "${TC_WORKDIR:-}" ] && [ -e "${TC_WORKDIR:-}" ]; then
     qmk_uid=$(stat --format='%u' "$TC_WORKDIR")
